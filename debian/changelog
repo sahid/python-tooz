@@ -1,0 +1,147 @@
+python-tooz (1.43.0-0ubuntu1) yakkety; urgency=medium
+
+  * New upstream release.
+  * d/control: Align (Build-)Depends with upstream.
+
+ -- Corey Bryant <corey.bryant@canonical.com>  Thu, 06 Oct 2016 10:30:25 -0400
+
+python-tooz (1.40.0-1ubuntu1) yakkety; urgency=medium
+
+  * Merge from Debian experimental, remaining changes:
+    - d/control: Add python{3}-sysv-ipc to Suggests to binary packages.
+
+ -- Corey Bryant <corey.bryant@canonical.com>  Wed, 13 Jul 2016 16:44:17 -0400
+
+python-tooz (1.40.0-1) experimental; urgency=medium
+
+  [ Ondřej Nový ]
+  * Standards-Version is 3.9.8 now (no change)
+  * d/rules: Changed UPSTREAM_GIT protocol to https
+
+  [ Thomas Goirand ]
+  * New upstream release.
+  * Fixed (build-)depends for this release.
+  * Using pkgos-dh_auto_{test,install} from openstack-pkg-tools >= 52~.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 13 Jul 2016 13:01:52 +0200
+
+python-tooz (1.34.0-2) unstable; urgency=medium
+
+  * Uploading to unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 05 Apr 2016 11:19:25 +0000
+
+python-tooz (1.34.0-1ubuntu1) xenial; urgency=medium
+
+  * Merge from Debian experimental, remaining changes:
+    - d/control: Drop python{3}-sysv-ipc from BD's, add as Suggests to
+      binary packages.
+    - d/p/disable-sysv-ipc.patch: Disable ipc unit tests for package build.
+
+ -- Corey Bryant <corey.bryant@canonical.com>  Mon, 14 Mar 2016 14:30:16 -0400
+
+python-tooz (1.34.0-1) experimental; urgency=medium
+
+  [ Corey Bryant ]
+  * d/rules: Enable py3 tests.
+
+  [ Ondřej Nový ]
+  * Fixed VCS URLs (https).
+
+  [ Thomas Goirand ]
+  * New upstream release.
+  * Fixed (build-)depends for this release.
+  * Cleans /tmp/groups before running unit tests, which was the reason so that
+    Py3 tests were failing.
+  * Standards-Version: 3.9.7 (no change).
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 09 Mar 2016 16:46:24 +0100
+
+python-tooz (1.29.0-1ubuntu1) xenial; urgency=medium
+
+  * Merge from Debian experimental, remaining changes:
+    - d/control: Drop python{3}-sysv-ipc from BD's, add as Suggests to
+      binary packages.
+    - d/p/disable-sysv-ipc.patch: Disable ipc unit tests for package build.
+    - d/rules: Enable py3 tests.
+
+ -- Corey Bryant <corey.bryant@canonical.com>  Wed, 20 Jan 2016 13:16:33 -0500
+
+python-tooz (1.29.0-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Fixed (build-)depends for this release.
+  * Fixed debian/copyright ordering.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 19 Jan 2016 02:10:55 +0000
+
+python-tooz (1.21.0-2) unstable; urgency=medium
+
+  * Uploading to unstable.
+  * Fixed new upsteram VCS and watch file using github not PyPi.
+  * Using override_dh_auto_install not dh_install.
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 16 Oct 2015 12:16:04 +0000
+
+python-tooz (1.21.0-1ubuntu1) wily; urgency=medium
+
+  * Merge from Debian experimental, remaining changes:
+    - d/control: Drop python{3}-sysv-ipc from BD's, add as Suggests to
+      binary packages.
+    - d/p/disable-sysv-ipc.patch: Disable ipc unit tests for package build.
+
+ -- James Page <james.page@ubuntu.com>  Tue, 11 Aug 2015 09:37:28 +0100
+
+python-tooz (1.21.0-1) experimental; urgency=medium
+
+  * New upstream release.
+  * Fixed (build-)depends for this release.
+  * Fixed MySQLd runs in unit tests.
+  * Disabled Py3 tests as it fails in concurrent.futures.
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 06 Aug 2015 07:56:31 +0000
+
+python-tooz (0.13.1-2) unstable; urgency=medium
+
+  * Do not test using redis-server: it seems there's issues with it.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 06 May 2015 11:02:28 +0200
+
+python-tooz (0.13.1-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Fixed (build-)depends for this release.
+  * Reworked the way to run unit tests.
+  * Running tests with MySQL and PGSQL server.
+  * Also runs memcached tests.
+  * Also runs redis-server tests.
+  * Sets homepage.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 06 May 2015 07:30:13 +0000
+
+python-tooz (0.4-1) unstable; urgency=medium
+
+  * New upstream release.
+  * Replaced (build-)depends of python-posix-ipc by python-sysv-ipc.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 30 Sep 2014 08:52:36 +0000
+
+python-tooz (0.3-3) unstable; urgency=medium
+
+  * Only kill memcached if the packaging script started it.
+  * Also cleans .testrepository on clean.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 30 Sep 2014 08:03:50 +0000
+
+python-tooz (0.3-2) unstable; urgency=medium
+
+  * Check if memcached is started before building, start it if it isn't. Thanks
+    to Lucas Nussbaum for the bug report. (Closes: #759976)
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 01 Sep 2014 02:06:47 +0000
+
+python-tooz (0.3-1) unstable; urgency=medium
+
+  * Initial release. (Closes: #758138)
+
+ -- Thomas Goirand <zigo@debian.org>  Thu, 14 Aug 2014 21:57:41 +0800
