@@ -71,8 +71,8 @@ Build-Depends-Indep: memcached,
                      subunit,
                      testrepository,
 Standards-Version: 3.9.8
-Vcs-Browser: https://anonscm.debian.org/cgit/openstack/python-tooz.git/
-Vcs-Git: https://anonscm.debian.org/git/openstack/python-tooz.git
+Vcs-Browser: https://git.launchpad.net/~ubuntu-server-dev/ubuntu/+source/python-tooz
+Vcs-Git: git://git.launchpad.net/~ubuntu-server-dev/ubuntu/+source/python-tooz
 Homepage: https://github.com/openstack/tooz
 
 Package: python-tooz

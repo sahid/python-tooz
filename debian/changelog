@@ -1,6 +1,7 @@
 python-tooz (1.43.0-0ubuntu2) UNRELEASED; urgency=medium
 
   * d/gbp.conf: Update gbp configuration file.
+  * d/control: Update Vcs-* links and maintainers.
 
  -- Corey Bryant <corey.bryant@canonical.com>  Wed, 19 Oct 2016 15:03:41 -0400
 
