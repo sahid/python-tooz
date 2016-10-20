@@ -23,6 +23,7 @@ import os
 import re
 import shutil
 import sys
+import tempfile
 import threading
 import weakref
 
@@ -30,6 +31,7 @@ from concurrent import futures
 
 import fasteners
 from oslo_utils import encodeutils
+from oslo_utils import fileutils
 from oslo_utils import timeutils
 import six
 import voluptuous
@@ -58,23 +60,6 @@ def _translate_failures():
                                       cause=e)
 
 
-_SCHEMAS = {
-    'group': voluptuous.Schema({
-        voluptuous.Required('group_id'): voluptuous.Any(six.text_type,
-                                                        six.binary_type),
-        # NOTE(sileht): tooz <1.36 was creating file without this
-        voluptuous.Optional('encoded'): bool,
-    }),
-    'member': voluptuous.Schema({
-        voluptuous.Required('member_id'): voluptuous.Any(six.text_type,
-                                                         six.binary_type),
-        voluptuous.Required('joined_on'): datetime.datetime,
-        # NOTE(sileht): tooz <1.36 was creating file without this
-        voluptuous.Optional('encoded'): bool,
-    }, extra=voluptuous.ALLOW_EXTRA),
-}
-
-
 def _convert_from_old_format(data):
     # NOTE(sileht): previous version of the driver was storing str as-is
     # making impossible to read from python3 something written with python2
@@ -95,17 +80,9 @@ def _convert_from_old_format(data):
         # if we need to decode the value or not. Python3 see bytes blob
         # We keep it as-is and pray, this have a good change to break if
         # the application was using str in python2 and unicode in python3
-        # The member file is often overriden so it's should be fine
+        # The member file is often overridden so it's should be fine
         # But the group file can be very old, so we
         # now have to update it each time create_group is called
-    return data
-
-
-def _load_and_validate(blob, schema_key):
-    data = utils.loads(blob)
-    data = _convert_from_old_format(data)
-    schema = _SCHEMAS[schema_key]
-    schema(data)
     return data
 
 
@@ -234,10 +211,11 @@ class FileDriver(coordination._RunWatchersMixin,
         self._dir = self._normalize_path(parsed_url.path)
         self._executor = utils.ProxyExecutor.build("File", options)
         self._group_dir = os.path.join(self._dir, 'groups')
+        self._tmpdir = os.path.join(self._dir, 'tmp')
         self._driver_lock_path = os.path.join(self._dir, '.driver_lock')
         self._driver_lock = self._get_raw_lock(self._driver_lock_path,
                                                self._member_id)
-        self._reserved_dirs = [self._dir, self._group_dir]
+        self._reserved_dirs = [self._dir, self._group_dir, self._tmpdir]
         self._reserved_paths = list(self._reserved_dirs)
         self._reserved_paths.append(self._driver_lock_path)
         self._joined_groups = set()
@@ -277,7 +255,7 @@ class FileDriver(coordination._RunWatchersMixin,
     def _start(self):
         for a_dir in self._reserved_dirs:
             try:
-                utils.ensure_tree(a_dir)
+                fileutils.ensure_tree(a_dir)
             except OSError as e:
                 raise coordination.ToozConnectionError(e)
         self._executor.start()
@@ -293,17 +271,18 @@ class FileDriver(coordination._RunWatchersMixin,
         }
         details[u'encoded'] = details[u"group_id"] != group_id
         details_blob = utils.dumps(details)
-        with open(path, "wb") as fh:
+        fd, name = tempfile.mkstemp("tooz", dir=self._tmpdir)
+        with os.fdopen(fd, "wb") as fh:
             fh.write(details_blob)
+        os.rename(name, path)
 
     def create_group(self, group_id):
         safe_group_id = self._make_filesystem_safe(group_id)
         group_dir = os.path.join(self._group_dir, safe_group_id)
         group_meta_path = os.path.join(group_dir, '.metadata')
 
-        @_lock_me(self._driver_lock)
         def _do_create_group():
-            if os.path.isdir(group_dir):
+            if os.path.exists(os.path.join(group_dir, ".metadata")):
                 # NOTE(sileht): We update the group metadata even
                 # they are already good, so ensure dict key are convert
                 # to unicode in case of the file have been written with
@@ -311,7 +290,7 @@ class FileDriver(coordination._RunWatchersMixin,
                 self._update_group_metadata(group_meta_path, group_id)
                 raise coordination.GroupAlreadyExist(group_id)
             else:
-                utils.ensure_tree(group_dir)
+                fileutils.ensure_tree(group_dir)
                 self._update_group_metadata(group_meta_path, group_id)
         fut = self._executor.submit(_do_create_group)
         return FileFutureResult(fut)
@@ -323,7 +302,7 @@ class FileDriver(coordination._RunWatchersMixin,
 
         @_lock_me(self._driver_lock)
         def _do_join_group():
-            if not os.path.isdir(group_dir):
+            if not os.path.exists(os.path.join(group_dir, ".metadata")):
                 raise coordination.GroupNotCreated(group_id)
             if os.path.isfile(me_path):
                 raise coordination.MemberAlreadyExist(group_id,
@@ -350,7 +329,7 @@ class FileDriver(coordination._RunWatchersMixin,
 
         @_lock_me(self._driver_lock)
         def _do_leave_group():
-            if not os.path.isdir(group_dir):
+            if not os.path.exists(os.path.join(group_dir, ".metadata")):
                 raise coordination.GroupNotCreated(group_id)
             try:
                 os.unlink(me_path)
@@ -366,17 +345,38 @@ class FileDriver(coordination._RunWatchersMixin,
         fut = self._executor.submit(_do_leave_group)
         return FileFutureResult(fut)
 
+    _SCHEMAS = {
+        'group': voluptuous.Schema({
+            voluptuous.Required('group_id'): voluptuous.Any(six.text_type,
+                                                            six.binary_type),
+            # NOTE(sileht): tooz <1.36 was creating file without this
+            voluptuous.Optional('encoded'): bool,
+        }),
+        'member': voluptuous.Schema({
+            voluptuous.Required('member_id'): voluptuous.Any(six.text_type,
+                                                             six.binary_type),
+            voluptuous.Required('joined_on'): datetime.datetime,
+            # NOTE(sileht): tooz <1.36 was creating file without this
+            voluptuous.Optional('encoded'): bool,
+        }, extra=voluptuous.ALLOW_EXTRA),
+    }
+
+    def _load_and_validate(self, blob, schema_key):
+        data = utils.loads(blob)
+        data = _convert_from_old_format(data)
+        schema = self._SCHEMAS[schema_key]
+        return schema(data)
+
+    def _read_member_id(self, path):
+        with open(path, 'rb') as fh:
+            details = self._load_and_validate(fh.read(), 'member')
+            if details.get("encoded"):
+                return details[u'member_id'].decode("utf-8")
+            return details[u'member_id']
+
     def get_members(self, group_id):
         safe_group_id = self._make_filesystem_safe(group_id)
         group_dir = os.path.join(self._group_dir, safe_group_id)
-
-        def _read_member_id(path):
-            with open(path, 'rb') as fh:
-                details = _load_and_validate(fh.read(), 'member')
-                if details.get("encoded"):
-                    return details[u'member_id'].decode("utf-8")
-                else:
-                    return details[u'member_id']
 
         @_lock_me(self._driver_lock)
         def _do_get_members():
@@ -395,7 +395,7 @@ class FileDriver(coordination._RunWatchersMixin,
                         continue
                     entry_path = os.path.join(group_dir, entry)
                     try:
-                        member_id = _read_member_id(entry_path)
+                        member_id = self._read_member_id(entry_path)
                     except EnvironmentError as e:
                         if e.errno != errno.ENOENT:
                             raise
@@ -427,7 +427,7 @@ class FileDriver(coordination._RunWatchersMixin,
                 else:
                     raise
             else:
-                details = _load_and_validate(contents, 'member')
+                details = self._load_and_validate(contents, 'member')
                 return details.get(u"capabilities")
 
         fut = self._executor.submit(_do_get_member_capabilities)
@@ -459,23 +459,21 @@ class FileDriver(coordination._RunWatchersMixin,
         fut = self._executor.submit(_do_delete_group)
         return FileFutureResult(fut)
 
+    def _read_group_id(self, path):
+        with open(path, 'rb') as fh:
+            details = self._load_and_validate(fh.read(), 'group')
+            if details.get("encoded"):
+                return details[u'group_id'].decode("utf-8")
+            return details[u'group_id']
+
     def get_groups(self):
 
-        def _read_group_id(path):
-            with open(path, 'rb') as fh:
-                details = _load_and_validate(fh.read(), 'group')
-                if details.get("encoded"):
-                    return details[u'group_id'].decode("utf-8")
-                else:
-                    return details[u'group_id']
-
-        @_lock_me(self._driver_lock)
         def _do_get_groups():
             groups = []
             for entry in os.listdir(self._group_dir):
                 path = os.path.join(self._group_dir, entry, '.metadata')
                 try:
-                    groups.append(_read_group_id(path))
+                    groups.append(self._read_group_id(path))
                 except EnvironmentError as e:
                     if e.errno != errno.ENOENT:
                         raise
