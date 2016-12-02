@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright © 2014 eNovance
+# Copyright © 2016 Red Hat, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -13,22 +13,19 @@
 # WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 # License for the specific language governing permissions and limitations
 # under the License.
-
-from testtools import testcase
-
-
-from tooz.drivers import _retry
+import tenacity
+from tenacity import stop
+from tenacity import wait
 
 
-class TestRetry(testcase.TestCase):
-    def test_retry(self):
-        self.i = 1
+_default_wait = wait.wait_exponential(max=1)
 
-        @_retry.retry()
-        def x(add_that):
-            if self.i == 1:
-                self.i += add_that
-                raise _retry.Retry
-            return self.i
 
-        self.assertEqual(x(42), 43)
+def retry(stop_max_delay=None, **kwargs):
+    k = {"wait": _default_wait, "retry": lambda x: False}
+    if stop_max_delay not in (True, False, None):
+        k['stop'] = stop.stop_after_delay(stop_max_delay)
+    return tenacity.retry(**k)
+
+
+TryAgain = tenacity.TryAgain

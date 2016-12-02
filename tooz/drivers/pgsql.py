@@ -23,8 +23,8 @@ import psycopg2
 import six
 
 import tooz
+from tooz import _retry
 from tooz import coordination
-from tooz.drivers import _retry
 from tooz import locking
 from tooz import utils
 
@@ -112,7 +112,7 @@ class PostgresLock(locking.Lock):
             # so we track it internally if the process already has the lock.
             if self.acquired is True:
                 if blocking:
-                    raise _retry.Retry
+                    raise _retry.TryAgain
                 return False
 
             with _translating_cursor(self._conn) as cur:
@@ -130,7 +130,7 @@ class PostgresLock(locking.Lock):
                     elif blocking is False:
                         return False
                     else:
-                        raise _retry.Retry
+                        raise _retry.TryAgain
 
         return _lock()
 

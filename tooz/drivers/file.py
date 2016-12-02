@@ -218,7 +218,6 @@ class FileDriver(coordination._RunWatchersMixin,
         self._reserved_dirs = [self._dir, self._group_dir, self._tmpdir]
         self._reserved_paths = list(self._reserved_dirs)
         self._reserved_paths.append(self._driver_lock_path)
-        self._joined_groups = set()
         self._safe_member_id = self._make_filesystem_safe(member_id)
 
     @staticmethod
@@ -261,8 +260,6 @@ class FileDriver(coordination._RunWatchersMixin,
         self._executor.start()
 
     def _stop(self):
-        while self._joined_groups:
-            self.leave_group(self._joined_groups.pop())
         self._executor.stop()
 
     def _update_group_metadata(self, path, group_id):
@@ -382,7 +379,7 @@ class FileDriver(coordination._RunWatchersMixin,
         def _do_get_members():
             if not os.path.isdir(group_dir):
                 raise coordination.GroupNotCreated(group_id)
-            members = []
+            members = set()
             try:
                 entries = os.listdir(group_dir)
             except EnvironmentError as e:
@@ -400,7 +397,7 @@ class FileDriver(coordination._RunWatchersMixin,
                         if e.errno != errno.ENOENT:
                             raise
                     else:
-                        members.append(member_id)
+                        members.add(member_id)
             return members
 
         fut = self._executor.submit(_do_get_members)
@@ -449,6 +446,11 @@ class FileDriver(coordination._RunWatchersMixin,
             else:
                 if len(entries) > 1:
                     raise coordination.GroupNotEmpty(group_id)
+                elif len(entries) == 1 and entries != ['.metadata']:
+                    raise coordination.ToozError(
+                        "Unexpected path '%s' found in"
+                        " group directory '%s' (expected to only find"
+                        " a '.metadata' path)" % (entries[0], group_dir))
                 else:
                     try:
                         shutil.rmtree(group_dir)
