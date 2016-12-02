@@ -1,3 +1,11 @@
+python-tooz (1.45.0-0ubuntu1) UNRELEASED; urgency=medium
+
+  * New upstream version.
+  * d/control: Align (Build-)Depends with upstream. 
+  * d/control: Add autopkgtest support.
+
+ -- Chuck Short <zulcss@ubuntu.com>  Fri, 02 Dec 2016 08:49:31 -0500
+
 python-tooz (1.44.0-0ubuntu1) zesty; urgency=medium
 
   * d/gbp.conf: Update gbp configuration file.
