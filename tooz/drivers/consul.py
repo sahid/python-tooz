@@ -20,8 +20,8 @@ import consul
 from oslo_utils import encodeutils
 
 import tooz
+from tooz import _retry
 from tooz import coordination
-from tooz.drivers import _retry
 from tooz import locking
 from tooz import utils
 
@@ -48,7 +48,7 @@ class ConsulLock(locking.Lock):
                 if blocking is False:
                     return False
                 else:
-                    raise _retry.Retry
+                    raise _retry.TryAgain
             else:
                 # The value can be anything.
                 gotten = self._client.kv.put(key=self._name,
@@ -60,7 +60,7 @@ class ConsulLock(locking.Lock):
                 if blocking is False:
                     return False
                 else:
-                    raise _retry.Retry
+                    raise _retry.TryAgain
 
         return _acquire()
 

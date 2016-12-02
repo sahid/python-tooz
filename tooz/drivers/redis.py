@@ -335,7 +335,6 @@ return 1
         self._client = None
         self._member_id = utils.to_binary(member_id, encoding=self._encoding)
         self._acquired_locks = set()
-        self._joined_groups = set()
         self._executor = utils.ProxyExecutor.build("Redis", options)
         self._started = False
         self._server_info = {}
@@ -516,16 +515,6 @@ return 1
                 lock.release()
             except coordination.ToozError:
                 LOG.warning("Unable to release lock '%s'", lock, exc_info=True)
-        while self._joined_groups:
-            group_id = self._joined_groups.pop()
-            try:
-                self.leave_group(group_id).get()
-            except (coordination.MemberNotJoined,
-                    coordination.GroupNotCreated):
-                pass
-            except coordination.ToozError:
-                LOG.warning("Unable to leave group '%s'", group_id,
-                            exc_info=True)
         self._executor.stop()
         if self._client is not None:
             # Make sure we no longer exist...
@@ -617,13 +606,13 @@ return 1
         def _get_members(p):
             if not p.exists(encoded_group):
                 raise coordination.GroupNotCreated(group_id)
-            potential_members = []
+            potential_members = set()
             for m in p.hkeys(encoded_group):
                 m = self._decode_member_id(m)
                 if m != self.GROUP_EXISTS:
-                    potential_members.append(m)
+                    potential_members.add(m)
             if not potential_members:
-                return []
+                return set()
             # Ok now we need to see which members have passed away...
             gone_members = set()
             member_values = p.mget(compat_map(self._encode_beat_id,
@@ -644,10 +633,9 @@ return 1
                                             for m in gone_members)
                 p.hdel(encoded_group, *encoded_gone_members)
                 p.execute()
-                return list(m for m in potential_members
-                            if m not in gone_members)
-            else:
-                return potential_members
+                return set(m for m in potential_members
+                           if m not in gone_members)
+            return potential_members
 
         return RedisFutureResult(self._submit(self._client.transaction,
                                               _get_members, encoded_group,

@@ -24,8 +24,8 @@ from oslo_utils import encodeutils
 from pymemcache import client as pymemcache_client
 import six
 
+from tooz import _retry
 from tooz import coordination
-from tooz.drivers import _retry
 from tooz import locking
 from tooz import utils
 
@@ -97,7 +97,7 @@ class MemcachedLock(locking.Lock):
                 return True
             if blocking is False:
                 return False
-            raise _retry.Retry
+            raise _retry.TryAgain
 
         return _acquire()
 
@@ -276,15 +276,6 @@ class MemcachedDriver(coordination._RunWatchersMixin,
         for lock in list(self._acquired_locks):
             lock.release()
         self.client.delete(self._encode_member_id(self._member_id))
-        for g in list(self._joined_groups):
-            try:
-                self.leave_group(g).get()
-            except (coordination.MemberNotJoined,
-                    coordination.GroupNotCreated):
-                # Guess we got booted out/never existed in the first place...
-                pass
-            except coordination.ToozError:
-                LOG.warning("Unable to leave group '%s'", g, exc_info=True)
         self._executor.stop()
         self.client.close()
 
@@ -310,12 +301,12 @@ class MemcachedDriver(coordination._RunWatchersMixin,
             if not self.client.cas(self.GROUP_LIST_KEY,
                                    list(group_list), cas):
                 # Someone updated the group list before us, try again!
-                raise _retry.Retry
+                raise _retry.TryAgain
         else:
             if not self.client.add(self.GROUP_LIST_KEY,
                                    [group_id], noreply=False):
                 # Someone updated the group list before us, try again!
-                raise _retry.Retry
+                raise _retry.TryAgain
 
     @_retry.retry()
     def _remove_from_group_list(self, group_id):
@@ -329,7 +320,7 @@ class MemcachedDriver(coordination._RunWatchersMixin,
         if not self.client.cas(self.GROUP_LIST_KEY,
                                list(group_list), cas):
             # Someone updated the group list before us, try again!
-            raise _retry.Retry
+            raise _retry.TryAgain
 
     def create_group(self, group_id):
         encoded_group = self._encode_group_id(group_id)
@@ -367,7 +358,7 @@ class MemcachedDriver(coordination._RunWatchersMixin,
             }
             if not self.client.cas(encoded_group, group_members, cas):
                 # It changed, let's try again
-                raise _retry.Retry
+                raise _retry.TryAgain
             self._joined_groups.add(group_id)
 
         return MemcachedFutureResult(self._executor.submit(_join_group))
@@ -386,7 +377,7 @@ class MemcachedDriver(coordination._RunWatchersMixin,
             del group_members[self._member_id]
             if not self.client.cas(encoded_group, group_members, cas):
                 # It changed, let's try again
-                raise _retry.Retry
+                raise _retry.TryAgain
             self._joined_groups.discard(group_id)
 
         return MemcachedFutureResult(self._executor.submit(_leave_group))
@@ -408,7 +399,7 @@ class MemcachedDriver(coordination._RunWatchersMixin,
             # Delete is not atomic, so we first set the group to
             # using CAS, and then we delete it, to avoid race conditions.
             if not self.client.cas(encoded_group, None, cas):
-                raise _retry.Retry
+                raise _retry.TryAgain
             self.client.delete(encoded_group)
             self._remove_from_group_list(group_id)
 
@@ -431,13 +422,13 @@ class MemcachedDriver(coordination._RunWatchersMixin,
             # There are some dead members, update the group
             if not self.client.cas(encoded_group, actual_group_members, cas):
                 # It changed, let's try again
-                raise _retry.Retry
+                raise _retry.TryAgain
         return actual_group_members
 
     def get_members(self, group_id):
 
         def _get_members():
-            return self._get_members(group_id).keys()
+            return set(self._get_members(group_id).keys())
 
         return MemcachedFutureResult(self._executor.submit(_get_members))
 
@@ -466,7 +457,7 @@ class MemcachedDriver(coordination._RunWatchersMixin,
             group_members[self._member_id][b'capabilities'] = capabilities
             if not self.client.cas(encoded_group, group_members, cas):
                 # It changed, try again
-                raise _retry.Retry
+                raise _retry.TryAgain
 
         return MemcachedFutureResult(
             self._executor.submit(_update_capabilities))

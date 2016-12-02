@@ -28,6 +28,7 @@ import six
 from stevedore import driver
 
 import tooz
+from tooz import _retry
 
 LOG = logging.getLogger(__name__)
 
@@ -384,6 +385,8 @@ class CoordinationDriver(object):
         if self.requires_beating and start_heart:
             self.heart.start()
         self._started = True
+        # Tracks which group are joined
+        self._joined_groups = set()
 
     def _start(self):
         pass
@@ -399,6 +402,17 @@ class CoordinationDriver(object):
         if self.heart.is_alive():
             self.heart.stop()
             self.heart.wait()
+        leaving = [self.leave_group(group)
+                   for group in self._joined_groups]
+        for leave in leaving:
+            try:
+                leave.get()
+            except ToozError:
+                # Whatever happens, ignore. Maybe we got booted out/never
+                # existed in the first place, or something is down, but we just
+                # want to call _stop after whatever happens to not leak any
+                # connection.
+                pass
         self._stop()
         self._started = False
 
@@ -438,6 +452,33 @@ class CoordinationDriver(object):
         """
         raise tooz.NotImplemented
 
+    @_retry.retry()
+    def join_group_create(self, group_id):
+        """Join a group and create it if necessary.
+
+        If the group cannot be joined because it does not exist, it is created
+        before being joined.
+
+        This function will keep retrying until it can create the group and join
+        it. Since nothing is transactional, it may have to retry several times
+        if another member is creating/deleting the group at the same time.
+
+        :param group_id: Identifier of the group to join and create
+
+        """
+        req = self.join_group(group_id)
+        try:
+            req.get()
+        except GroupNotCreated:
+            req = self.create_group(group_id)
+            try:
+                req.get()
+            except GroupAlreadyExist:
+                # The group might have been created in the meantime, ignore
+                pass
+            # Now retry to join the group
+            raise _retry.TryAgain
+
     @staticmethod
     def leave_group(group_id):
         """Leave a group asynchronously.
@@ -462,9 +503,9 @@ class CoordinationDriver(object):
 
     @staticmethod
     def get_members(group_id):
-        """Return the list of all members ids of the specified group.
+        """Return the set of all members ids of the specified group.
 
-        :returns: list of all created group ids
+        :returns: set of all created group ids
         :rtype: CoordAsyncResult
         """
         raise tooz.NotImplemented
@@ -580,8 +621,6 @@ class _RunWatchersMixin(object):
                         timeout=w.leftover(return_none=True))
                 except GroupNotCreated:
                     group_members = set()
-                else:
-                    group_members = set(group_members)
                 if (group_id in self._joined_groups and
                         self._member_id not in group_members):
                     self._joined_groups.discard(group_id)
