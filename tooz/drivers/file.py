@@ -163,8 +163,7 @@ class FileLock(locking.Lock):
             LOG.warning("Unreleased lock %s garbage collected", self.name)
 
 
-class FileDriver(coordination._RunWatchersMixin,
-                 coordination.CoordinationDriver):
+class FileDriver(coordination.CoordinationDriverCachedRunWatchers):
     """A file based driver.
 
     This driver uses files and directories (and associated file locks) to
@@ -206,8 +205,7 @@ class FileDriver(coordination._RunWatchersMixin,
 
     def __init__(self, member_id, parsed_url, options):
         """Initialize the file driver."""
-        super(FileDriver, self).__init__()
-        self._member_id = member_id
+        super(FileDriver, self).__init__(member_id)
         self._dir = self._normalize_path(parsed_url.path)
         self._executor = utils.ProxyExecutor.build("File", options)
         self._group_dir = os.path.join(self._dir, 'groups')
@@ -483,25 +481,6 @@ class FileDriver(coordination._RunWatchersMixin,
 
         fut = self._executor.submit(_do_get_groups)
         return FileFutureResult(fut)
-
-    def _init_watch_group(self, group_id):
-        group_members_fut = self.get_members(group_id)
-        group_members = group_members_fut.get(timeout=None)
-        self._group_members[group_id].update(group_members)
-
-    def watch_join_group(self, group_id, callback):
-        self._init_watch_group(group_id)
-        return super(FileDriver, self).watch_join_group(group_id, callback)
-
-    def unwatch_join_group(self, group_id, callback):
-        return super(FileDriver, self).unwatch_join_group(group_id, callback)
-
-    def watch_leave_group(self, group_id, callback):
-        self._init_watch_group(group_id)
-        return super(FileDriver, self).watch_leave_group(group_id, callback)
-
-    def unwatch_leave_group(self, group_id, callback):
-        return super(FileDriver, self).unwatch_leave_group(group_id, callback)
 
     @staticmethod
     def watch_elected_as_leader(group_id, callback):
