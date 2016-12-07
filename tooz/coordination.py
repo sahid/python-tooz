@@ -127,6 +127,11 @@ class MemberJoinedGroup(Event):
         self.group_id = group_id
         self.member_id = member_id
 
+    def __repr__(self):
+        return "<%s: group %s: +member %s>" % (self.__class__.__name__,
+                                               self.member_id,
+                                               self.group_id)
+
 
 class MemberLeftGroup(Event):
     """A member left a group event."""
@@ -134,6 +139,11 @@ class MemberLeftGroup(Event):
     def __init__(self, group_id, member_id):
         self.group_id = group_id
         self.member_id = member_id
+
+    def __repr__(self):
+        return "<%s: group %s: -member %s>" % (self.__class__.__name__,
+                                               self.member_id,
+                                               self.group_id)
 
 
 class LeaderElected(Event):
@@ -215,7 +225,6 @@ class Heart(object):
         return self._finished.is_set()
 
 
-@six.add_metaclass(abc.ABCMeta)
 class CoordinationDriver(object):
 
     requires_beating = False
@@ -232,21 +241,21 @@ class CoordinationDriver(object):
     enum member(s) that can be used to interogate how this driver works.
     """
 
-    def __init__(self):
+    def __init__(self, member_id):
+        super(CoordinationDriver, self).__init__()
+        self._member_id = member_id
         self._started = False
         self._hooks_join_group = collections.defaultdict(Hooks)
         self._hooks_leave_group = collections.defaultdict(Hooks)
         self._hooks_elected_leader = collections.defaultdict(Hooks)
-        # A cache for group members
-        self._group_members = collections.defaultdict(set)
         self.requires_beating = (
             CoordinationDriver.heartbeat != self.__class__.heartbeat
         )
         self.heart = Heart(self)
 
     def _has_hooks_for_group(self, group_id):
-        return (len(self._hooks_join_group[group_id]) +
-                len(self._hooks_leave_group[group_id]))
+        return (group_id in self._hooks_join_group or
+                group_id in self._hooks_leave_group)
 
     @staticmethod
     def run_watchers(timeout=None):
@@ -262,7 +271,6 @@ class CoordinationDriver(object):
         """Try to leader elect this coordinator & activate hooks on success."""
         raise tooz.NotImplemented
 
-    @abc.abstractmethod
     def watch_join_group(self, group_id, callback):
         """Call a function when group_id sees a new member joined.
 
@@ -275,7 +283,6 @@ class CoordinationDriver(object):
         """
         self._hooks_join_group[group_id].append(callback)
 
-    @abc.abstractmethod
     def unwatch_join_group(self, group_id, callback):
         """Stop executing a function when a group_id sees a new member joined.
 
@@ -284,15 +291,17 @@ class CoordinationDriver(object):
                          this group
         """
         try:
+            # Check if group_id is in hooks to avoid creating a default empty
+            # entry in hooks list.
+            if group_id not in self._hooks_join_group:
+                raise ValueError
             self._hooks_join_group[group_id].remove(callback)
         except ValueError:
             raise WatchCallbackNotFound(group_id, callback)
 
-        if (not self._has_hooks_for_group(group_id) and
-           group_id in self._group_members):
-            del self._group_members[group_id]
+        if not self._hooks_join_group[group_id]:
+            del self._hooks_join_group[group_id]
 
-    @abc.abstractmethod
     def watch_leave_group(self, group_id, callback):
         """Call a function when group_id sees a new member leaving.
 
@@ -306,7 +315,6 @@ class CoordinationDriver(object):
         """
         self._hooks_leave_group[group_id].append(callback)
 
-    @abc.abstractmethod
     def unwatch_leave_group(self, group_id, callback):
         """Stop executing a function when a group_id sees a new member leaving.
 
@@ -315,18 +323,17 @@ class CoordinationDriver(object):
                          this group
         """
         try:
+            # Check if group_id is in hooks to avoid creating a default empty
+            # entry in hooks list.
+            if group_id not in self._hooks_leave_group:
+                raise ValueError
             self._hooks_leave_group[group_id].remove(callback)
         except ValueError:
             raise WatchCallbackNotFound(group_id, callback)
 
-        if (not self._has_hooks_for_group(group_id) and
-           group_id in self._group_members):
-            del self._group_members[group_id]
-
         if not self._hooks_leave_group[group_id]:
             del self._hooks_leave_group[group_id]
 
-    @abc.abstractmethod
     def watch_elected_as_leader(self, group_id, callback):
         """Call a function when member gets elected as leader.
 
@@ -340,7 +347,6 @@ class CoordinationDriver(object):
         """
         self._hooks_elected_leader[group_id].append(callback)
 
-    @abc.abstractmethod
     def unwatch_elected_as_leader(self, group_id, callback):
         """Call a function when member gets elected as leader.
 
@@ -606,18 +612,60 @@ class CoordAsyncResult(object):
         """Returns True if the task is done, False otherwise."""
 
 
-class _RunWatchersMixin(object):
-    """Mixin to share the *mostly* common ``run_watchers`` implementation."""
+class CoordinationDriverCachedRunWatchers(CoordinationDriver):
+    """Coordination driver with a `run_watchers` implementation.
+
+    This implementation of `run_watchers` is based on a cache of the group
+    members between each run of `run_watchers` that is being updated between
+    each run.
+
+    """
+
+    def __init__(self, member_id):
+        super(CoordinationDriverCachedRunWatchers, self).__init__(member_id)
+        # A cache for group members
+        self._group_members = collections.defaultdict(set)
+        self._joined_groups = set()
+
+    def _init_watch_group(self, group_id):
+        members = self.get_members(group_id).get()
+        if group_id not in self._group_members:
+            self._group_members[group_id] = members
+
+    def watch_join_group(self, group_id, callback):
+        self._init_watch_group(group_id)
+        super(CoordinationDriverCachedRunWatchers, self).watch_join_group(
+            group_id, callback)
+
+    def unwatch_join_group(self, group_id, callback):
+        super(CoordinationDriverCachedRunWatchers, self).unwatch_join_group(
+            group_id, callback)
+
+        if (not self._has_hooks_for_group(group_id) and
+           group_id in self._group_members):
+            del self._group_members[group_id]
+
+    def watch_leave_group(self, group_id, callback):
+        self._init_watch_group(group_id)
+        super(CoordinationDriverCachedRunWatchers, self).watch_leave_group(
+            group_id, callback)
+
+    def unwatch_leave_group(self, group_id, callback):
+        super(CoordinationDriverCachedRunWatchers, self).unwatch_leave_group(
+            group_id, callback)
+
+        if (not self._has_hooks_for_group(group_id) and
+           group_id in self._group_members):
+            del self._group_members[group_id]
 
     def run_watchers(self, timeout=None):
         with timeutils.StopWatch(duration=timeout) as w:
-            known_groups = self.get_groups().get(
-                timeout=w.leftover(return_none=True))
             result = []
-            for group_id in known_groups:
+            group_with_hooks = set(self._hooks_join_group.keys()).union(
+                set(self._hooks_leave_group.keys()))
+            for group_id in group_with_hooks:
                 try:
-                    group_members_fut = self.get_members(group_id)
-                    group_members = group_members_fut.get(
+                    group_members = self.get_members(group_id).get(
                         timeout=w.leftover(return_none=True))
                 except GroupNotCreated:
                     group_members = set()

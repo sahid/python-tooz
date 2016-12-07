@@ -21,7 +21,6 @@ from oslo_utils import timeutils
 import requests
 import six
 
-import tooz
 from tooz import coordination
 from tooz import locking
 from tooz import utils
@@ -201,7 +200,7 @@ class EtcdDriver(coordination.CoordinationDriver):
     lock_encoder_cls = utils.Base64LockEncoder
 
     def __init__(self, member_id, parsed_url, options):
-        super(EtcdDriver, self).__init__()
+        super(EtcdDriver, self).__init__(member_id)
         host = parsed_url.hostname or self.DEFAULT_HOST
         port = parsed_url.port or self.DEFAULT_PORT
         options = utils.collapse(options)
@@ -227,27 +226,3 @@ class EtcdDriver(coordination.CoordinationDriver):
         for lock in self._acquired_locks:
             lock.heartbeat()
         return self.lock_timeout
-
-    @staticmethod
-    def watch_join_group(group_id, callback):
-        raise tooz.NotImplemented
-
-    @staticmethod
-    def unwatch_join_group(group_id, callback):
-        raise tooz.NotImplemented
-
-    @staticmethod
-    def watch_leave_group(group_id, callback):
-        raise tooz.NotImplemented
-
-    @staticmethod
-    def unwatch_leave_group(group_id, callback):
-        raise tooz.NotImplemented
-
-    @staticmethod
-    def watch_elected_as_leader(group_id, callback):
-        raise tooz.NotImplemented
-
-    @staticmethod
-    def unwatch_elected_as_leader(group_id, callback):
-        raise tooz.NotImplemented

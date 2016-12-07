@@ -106,8 +106,7 @@ class RedisLock(locking.Lock):
         return self in self._coord._acquired_locks
 
 
-class RedisDriver(coordination._RunWatchersMixin,
-                  coordination.CoordinationDriver):
+class RedisDriver(coordination.CoordinationDriverCachedRunWatchers):
     """Redis provides a few nice benefits that act as a poormans zookeeper.
 
     It **is** fully functional and implements all of the coordination
@@ -316,7 +315,7 @@ return 1
     """
 
     def __init__(self, member_id, parsed_url, options):
-        super(RedisDriver, self).__init__()
+        super(RedisDriver, self).__init__(member_id)
         options = utils.collapse(options, exclude=self.CLIENT_LIST_ARGS)
         self._parsed_url = parsed_url
         self._options = options
@@ -333,7 +332,6 @@ return 1
         self._beat_prefix = self._namespace + b"_beats"
         self._groups = self._namespace + b"_groups"
         self._client = None
-        self._member_id = utils.to_binary(member_id, encoding=self._encoding)
         self._acquired_locks = set()
         self._executor = utils.ProxyExecutor.build("Redis", options)
         self._started = False
@@ -721,32 +719,6 @@ return 1
             return results
 
         return RedisFutureResult(self._submit(_get_groups))
-
-    def _init_watch_group(self, group_id):
-        members = self.get_members(group_id)
-        self._group_members[group_id].update(members.get(timeout=None))
-
-    def watch_join_group(self, group_id, callback):
-        self._init_watch_group(group_id)
-        return super(RedisDriver, self).watch_join_group(group_id, callback)
-
-    def unwatch_join_group(self, group_id, callback):
-        return super(RedisDriver, self).unwatch_join_group(group_id, callback)
-
-    def watch_leave_group(self, group_id, callback):
-        self._init_watch_group(group_id)
-        return super(RedisDriver, self).watch_leave_group(group_id, callback)
-
-    def unwatch_leave_group(self, group_id, callback):
-        return super(RedisDriver, self).unwatch_leave_group(group_id, callback)
-
-    def watch_elected_as_leader(self, group_id, callback):
-        return super(RedisDriver, self).watch_elected_as_leader(
-            group_id, callback)
-
-    def unwatch_elected_as_leader(self, group_id, callback):
-        return super(RedisDriver, self).unwatch_elected_as_leader(
-            group_id, callback)
 
     def _get_leader_lock(self, group_id):
         name = self._encode_group_leader(group_id)
