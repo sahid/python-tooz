@@ -55,9 +55,9 @@ def _translate_failures():
     try:
         yield
     except (EnvironmentError, voluptuous.Invalid) as e:
-        coordination.raise_with_cause(coordination.ToozError,
-                                      encodeutils.exception_to_unicode(e),
-                                      cause=e)
+        utils.raise_with_cause(tooz.ToozError,
+                               encodeutils.exception_to_unicode(e),
+                               cause=e)
 
 
 def _convert_from_old_format(data):
@@ -445,7 +445,7 @@ class FileDriver(coordination.CoordinationDriverCachedRunWatchers):
                 if len(entries) > 1:
                     raise coordination.GroupNotEmpty(group_id)
                 elif len(entries) == 1 and entries != ['.metadata']:
-                    raise coordination.ToozError(
+                    raise tooz.ToozError(
                         "Unexpected path '%s' found in"
                         " group directory '%s' (expected to only find"
                         " a '.metadata' path)" % (entries[0], group_dir))
@@ -505,9 +505,9 @@ class FileFutureResult(coordination.CoordAsyncResult):
             with _translate_failures():
                 return self._fut.result(timeout=timeout)
         except futures.TimeoutError as e:
-            coordination.raise_with_cause(coordination.OperationTimedOut,
-                                          encodeutils.exception_to_unicode(e),
-                                          cause=e)
+            utils.raise_with_cause(coordination.OperationTimedOut,
+                                   encodeutils.exception_to_unicode(e),
+                                   cause=e)
 
     def done(self):
         return self._fut.done()

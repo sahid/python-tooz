@@ -71,7 +71,7 @@ Zookeeper
 Exceptions
 ----------
 
-.. autoclass:: tooz.coordination.ToozError
+.. autoclass:: tooz.ToozError
 .. autoclass:: tooz.coordination.ToozConnectionError
 .. autoclass:: tooz.coordination.OperationTimedOut
 .. autoclass:: tooz.coordination.GroupNotCreated
@@ -79,4 +79,4 @@ Exceptions
 .. autoclass:: tooz.coordination.MemberAlreadyExist
 .. autoclass:: tooz.coordination.MemberNotJoined
 .. autoclass:: tooz.coordination.GroupNotEmpty
-.. autofunction:: tooz.coordination.raise_with_cause
+.. autofunction:: tooz.utils.raise_with_cause
