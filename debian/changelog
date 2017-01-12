@@ -1,3 +1,10 @@
+python-tooz (1.47.0-0ubuntu1) UNRELEASED; urgency=medium
+
+  * New upstream version.
+  * d/control: Align (Build-)Depends with upstream. 
+
+ -- Chuck Short <zulcss@ubuntu.com>  Thu, 12 Jan 2017 11:32:17 -0500
+
 python-tooz (1.46.0-0ubuntu1) zesty; urgency=medium
 
   * New upstream version.
