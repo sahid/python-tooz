@@ -20,6 +20,7 @@ import contextlib
 from distutils import version
 import logging
 import string
+import threading
 
 from concurrent import futures
 from oslo_utils import encodeutils
@@ -45,19 +46,22 @@ def _translate_failures():
     try:
         yield
     except (exceptions.ConnectionError, exceptions.TimeoutError) as e:
-        coordination.raise_with_cause(coordination.ToozConnectionError,
-                                      encodeutils.exception_to_unicode(e),
-                                      cause=e)
+        utils.raise_with_cause(coordination.ToozConnectionError,
+                               encodeutils.exception_to_unicode(e),
+                               cause=e)
     except exceptions.RedisError as e:
-        coordination.raise_with_cause(coordination.ToozError,
-                                      encodeutils.exception_to_unicode(e),
-                                      cause=e)
+        utils.raise_with_cause(tooz.ToozError,
+                               encodeutils.exception_to_unicode(e),
+                               cause=e)
 
 
 class RedisLock(locking.Lock):
     def __init__(self, coord, client, name, timeout):
         name = "%s_%s_lock" % (coord.namespace, six.text_type(name))
         super(RedisLock, self).__init__(name)
+        # NOTE(jd) Make sure we don't release and heartbeat at the same time by
+        # using a exclusive access lock (LP#1557593)
+        self._exclusive_access = threading.Lock()
         self._lock = client.lock(name,
                                  timeout=timeout,
                                  thread_local=False)
@@ -86,20 +90,22 @@ class RedisLock(locking.Lock):
             return acquired
 
     def release(self):
-        if not self.acquired:
-            return False
-        with _translate_failures():
-            try:
-                self._lock.release()
-            except exceptions.LockError:
+        with self._exclusive_access:
+            if not self.acquired:
                 return False
-            self._coord._acquired_locks.discard(self)
-            return True
+            with _translate_failures():
+                try:
+                    self._lock.release()
+                except exceptions.LockError:
+                    return False
+                self._coord._acquired_locks.discard(self)
+                return True
 
     def heartbeat(self):
-        if self.acquired:
-            with _translate_failures():
-                self._lock.extend(self._lock.timeout)
+        with self._exclusive_access:
+            if self.acquired:
+                with _translate_failures():
+                    self._lock.extend(self._lock.timeout)
 
     @property
     def acquired(self):
@@ -425,9 +431,9 @@ return 1
             self._client = self._make_client(self._parsed_url, self._options,
                                              self.timeout)
         except exceptions.RedisError as e:
-            coordination.raise_with_cause(coordination.ToozConnectionError,
-                                          encodeutils.exception_to_unicode(e),
-                                          cause=e)
+            utils.raise_with_cause(coordination.ToozConnectionError,
+                                   encodeutils.exception_to_unicode(e),
+                                   cause=e)
         else:
             # Ensure that the server is alive and not dead, this does not
             # ensure the server will always be alive, but does insure that it
@@ -501,7 +507,7 @@ return 1
         for lock in self._acquired_locks.copy():
             try:
                 lock.heartbeat()
-            except coordination.ToozError:
+            except tooz.ToozError:
                 LOG.warning("Unable to heartbeat lock '%s'", lock,
                             exc_info=True)
         return min(self.lock_timeout, self.membership_timeout)
@@ -511,7 +517,7 @@ return 1
             lock = self._acquired_locks.pop()
             try:
                 lock.release()
-            except coordination.ToozError:
+            except tooz.ToozError:
                 LOG.warning("Unable to release lock '%s'", lock, exc_info=True)
         self._executor.stop()
         if self._client is not None:
@@ -522,7 +528,7 @@ return 1
                 # exist in the first place, which is fine/expected/desired...
                 with _translate_failures():
                     self._client.delete(beat_id)
-            except coordination.ToozError:
+            except tooz.ToozError:
                 LOG.warning("Unable to delete heartbeat key '%s'", beat_id,
                             exc_info=True)
             self._client = None
@@ -532,14 +538,14 @@ return 1
 
     def _submit(self, cb, *args, **kwargs):
         if not self._started:
-            raise coordination.ToozError("Redis driver has not been started")
+            raise tooz.ToozError("Redis driver has not been started")
         return self._executor.submit(cb, *args, **kwargs)
 
     def _get_script(self, script_key):
         try:
             return self._scripts[script_key]
         except KeyError:
-            raise coordination.ToozError("Redis driver has not been started")
+            raise tooz.ToozError("Redis driver has not been started")
 
     def create_group(self, group_id):
         script = self._get_script('create_group')
@@ -696,13 +702,13 @@ return 1
             if result == -3:
                 raise coordination.GroupNotEmpty(group_id)
             if result == -4:
-                raise coordination.ToozError("Unable to remove '%s' key"
-                                             " from set located at '%s'"
-                                             % (args[0], keys[-1]))
+                raise tooz.ToozError("Unable to remove '%s' key"
+                                     " from set located at '%s'"
+                                     % (args[0], keys[-1]))
             if result != 1:
-                raise coordination.ToozError("Internal error, unable"
-                                             " to complete group '%s' removal"
-                                             % (group_id))
+                raise tooz.ToozError("Internal error, unable"
+                                     " to complete group '%s' removal"
+                                     % (group_id))
 
         return RedisFutureResult(self._submit(_delete_group, script))
 
@@ -753,9 +759,9 @@ class RedisFutureResult(coordination.CoordAsyncResult):
             with _translate_failures():
                 return self._fut.result(timeout=timeout)
         except futures.TimeoutError as e:
-            coordination.raise_with_cause(coordination.OperationTimedOut,
-                                          encodeutils.exception_to_unicode(e),
-                                          cause=e)
+            utils.raise_with_cause(coordination.OperationTimedOut,
+                                   encodeutils.exception_to_unicode(e),
+                                   cause=e)
 
     def done(self):
         return self._fut.done()

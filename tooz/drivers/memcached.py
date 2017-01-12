@@ -23,6 +23,7 @@ from oslo_utils import encodeutils
 from pymemcache import client as pymemcache_client
 import six
 
+import tooz
 from tooz import _retry
 from tooz import coordination
 from tooz import locking
@@ -43,9 +44,9 @@ def _translate_failures(func):
         try:
             return func(*args, **kwargs)
         except pymemcache_client.MemcacheUnexpectedCloseError as e:
-            coordination.raise_with_cause(coordination.ToozConnectionError,
-                                          encodeutils.exception_to_unicode(e),
-                                          cause=e)
+            utils.raise_with_cause(coordination.ToozConnectionError,
+                                   encodeutils.exception_to_unicode(e),
+                                   cause=e)
         except (socket.timeout, socket.error,
                 socket.gaierror, socket.herror) as e:
             # TODO(harlowja): get upstream pymemcache to produce a better
@@ -55,12 +56,12 @@ def _translate_failures(func):
             if e.errno is not None:
                 msg += " (with errno %s [%s])" % (errno.errorcode[e.errno],
                                                   e.errno)
-            coordination.raise_with_cause(coordination.ToozConnectionError,
-                                          msg, cause=e)
+            utils.raise_with_cause(coordination.ToozConnectionError,
+                                   msg, cause=e)
         except pymemcache_client.MemcacheError as e:
-            coordination.raise_with_cause(coordination.ToozError,
-                                          encodeutils.exception_to_unicode(e),
-                                          cause=e)
+            utils.raise_with_cause(tooz.ToozError,
+                                   encodeutils.exception_to_unicode(e),
+                                   cause=e)
 
     return wrapper
 
@@ -510,7 +511,7 @@ class MemcachedFutureResult(coordination.CoordAsyncResult):
         try:
             return self._fut.result(timeout=timeout)
         except futures.TimeoutError as e:
-            coordination.raise_with_cause(
+            utils.raise_with_cause(
                 coordination.OperationTimedOut,
                 encodeutils.exception_to_unicode(e),
                 cause=e)
