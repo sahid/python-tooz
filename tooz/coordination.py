@@ -17,10 +17,12 @@
 
 import abc
 import collections
+from concurrent import futures
 import enum
 import logging
 import threading
 
+from oslo_utils import encodeutils
 from oslo_utils import excutils
 from oslo_utils import netutils
 from oslo_utils import timeutils
@@ -163,8 +165,6 @@ class Heart(object):
                  event_cls=threading.Event):
         self._thread_cls = thread_cls
         self._dead = event_cls()
-        self._finished = event_cls()
-        self._finished.set()
         self._runner = None
         self._driver = driver
         self._beats = 0
@@ -177,38 +177,36 @@ class Heart(object):
     def is_alive(self):
         """Returns if the heart is beating."""
         return not (self._runner is None
-                    or not self._runner.is_alive()
-                    or self._finished.is_set())
+                    or not self._runner.is_alive())
 
     @excutils.forever_retry_uncaught_exceptions
     def _beat_forever_until_stopped(self):
         """Inner beating loop."""
-        try:
-            while not self._dead.is_set():
-                with timeutils.StopWatch() as w:
-                    wait_until_next_beat = self._driver.heartbeat()
-                ran_for = w.elapsed()
-                if ran_for > wait_until_next_beat:
-                    LOG.warning(
-                        "Heartbeating took too long to execute (it ran for"
-                        " %0.2f seconds which is %0.2f seconds longer than"
-                        " the next heartbeat idle time). This may cause"
-                        " timeouts (in locks, leadership, ...) to"
-                        " happen (which will not end well).", ran_for,
-                        ran_for - wait_until_next_beat)
-                self._beats += 1
-                # NOTE(harlowja): use the event object for waiting and
-                # not a sleep function since doing that will allow this code
-                # to terminate early if stopped via the stop() method vs
-                # having to wait until the sleep function returns.
-                self._dead.wait(wait_until_next_beat)
-        finally:
-            self._finished.set()
+        while not self._dead.is_set():
+            with timeutils.StopWatch() as w:
+                wait_until_next_beat = self._driver.heartbeat()
+            ran_for = w.elapsed()
+            has_to_sleep_for = wait_until_next_beat - ran_for
+            if has_to_sleep_for < 0:
+                LOG.warning(
+                    "Heartbeating took too long to execute (it ran for"
+                    " %0.2f seconds which is %0.2f seconds longer than"
+                    " the next heartbeat idle time). This may cause"
+                    " timeouts (in locks, leadership, ...) to"
+                    " happen (which will not end well).", ran_for,
+                    ran_for - wait_until_next_beat)
+            self._beats += 1
+            # NOTE(harlowja): use the event object for waiting and
+            # not a sleep function since doing that will allow this code
+            # to terminate early if stopped via the stop() method vs
+            # having to wait until the sleep function returns.
+            # NOTE(jd): Wait for only the half time of what we should.
+            # This is a measure of safety, better be too soon than too late.
+            self._dead.wait(has_to_sleep_for / 2.0)
 
     def start(self, thread_cls=None):
         """Starts the heart beating thread (noop if already started)."""
         if not self.is_alive():
-            self._finished.clear()
             self._dead.clear()
             self._beats = 0
             if thread_cls is None:
@@ -223,8 +221,8 @@ class Heart(object):
 
     def wait(self, timeout=None):
         """Wait up to given timeout for the heart beating thread to stop."""
-        self._finished.wait(timeout)
-        return self._finished.is_set()
+        self._runner.join(timeout)
+        return self._runner.is_alive()
 
 
 class CoordinationDriver(object):
@@ -281,7 +279,7 @@ class CoordinationDriver(object):
         """
         self.join_group_create(
             group_id, capabilities=utils.dumps({'weight': weight}))
-        return partitioner.Partitioner(self, group_id)
+        return partitioner.Partitioner(self, group_id, partitions=partitions)
 
     def leave_partitioned_group(self, partitioner):
         """Leave a partitioned group.
@@ -651,6 +649,29 @@ class CoordAsyncResult(object):
         """Returns True if the task is done, False otherwise."""
 
 
+class CoordinatorResult(CoordAsyncResult):
+    """Asynchronous result that references a future."""
+
+    def __init__(self, fut, failure_translator=None):
+        self._fut = fut
+        self._failure_translator = failure_translator
+
+    def get(self, timeout=None):
+        try:
+            if self._failure_translator:
+                with self._failure_translator():
+                    return self._fut.result(timeout=timeout)
+            else:
+                return self._fut.result(timeout=timeout)
+        except futures.TimeoutError as e:
+            utils.raise_with_cause(OperationTimedOut,
+                                   encodeutils.exception_to_unicode(e),
+                                   cause=e)
+
+    def done(self):
+        return self._fut.done()
+
+
 class CoordinationDriverCachedRunWatchers(CoordinationDriver):
     """Coordination driver with a `run_watchers` implementation.
 
@@ -667,9 +688,9 @@ class CoordinationDriverCachedRunWatchers(CoordinationDriver):
         self._joined_groups = set()
 
     def _init_watch_group(self, group_id):
-        members = self.get_members(group_id).get()
         if group_id not in self._group_members:
-            self._group_members[group_id] = members
+            members = self.get_members(group_id)
+            self._group_members[group_id] = members.get()
 
     def watch_join_group(self, group_id, callback):
         self._init_watch_group(group_id)

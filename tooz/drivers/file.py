@@ -17,6 +17,7 @@
 import contextlib
 import datetime
 import errno
+import functools
 import hashlib
 import logging
 import os
@@ -26,8 +27,6 @@ import sys
 import tempfile
 import threading
 import weakref
-
-from concurrent import futures
 
 import fasteners
 from oslo_utils import encodeutils
@@ -48,6 +47,8 @@ class _Barrier(object):
     def __init__(self):
         self.cond = threading.Condition()
         self.owner = None
+        self.shared = False
+        self.ref = 0
 
 
 @contextlib.contextmanager
@@ -109,11 +110,12 @@ class FileLock(locking.Lock):
         self._lock = fasteners.InterProcessLock(path)
         self._barrier = barrier
         self._member_id = member_id
+        self.ref = 0
 
     def is_still_owner(self):
         return self.acquired
 
-    def acquire(self, blocking=True):
+    def acquire(self, blocking=True, shared=False):
         blocking, timeout = utils.convert_blocking(blocking)
         watch = timeutils.StopWatch(duration=timeout)
         watch.start()
@@ -121,11 +123,16 @@ class FileLock(locking.Lock):
         # Make the shared barrier ours first.
         with self._barrier.cond:
             while self._barrier.owner is not None:
+                if (shared and self._barrier.shared):
+                    break
                 if not blocking or watch.expired():
                     return False
                 self._barrier.cond.wait(watch.leftover(return_none=True))
             self._barrier.owner = (threading.current_thread().ident,
                                    os.getpid(), self._member_id)
+            self._barrier.shared = shared
+            self._barrier.ref += 1
+            self.ref += 1
 
         # Ok at this point we are now working in a thread safe manner,
         # and now we can try to get the actual lock...
@@ -144,6 +151,8 @@ class FileLock(locking.Lock):
                 # Release the barrier to let someone else have a go at it...
                 with self._barrier.cond:
                     self._barrier.owner = None
+                    self._barrier.ref = 0
+                    self._barrier.shared = False
                     self._barrier.cond.notify_all()
 
         self.acquired = gotten
@@ -153,9 +162,14 @@ class FileLock(locking.Lock):
         if not self.acquired:
             return False
         with self._barrier.cond:
-            self.acquired = False
-            self._barrier.owner = None
-            self._barrier.cond.notify_all()
+            self._barrier.ref -= 1
+            self.ref -= 1
+            if not self.ref:
+                self.acquired = False
+            if not self._barrier.ref:
+                self._barrier.owner = None
+                self._lock.release()
+                self._barrier.cond.notify_all()
         return True
 
     def __del__(self):
@@ -217,6 +231,8 @@ class FileDriver(coordination.CoordinationDriverCachedRunWatchers):
         self._reserved_paths = list(self._reserved_dirs)
         self._reserved_paths.append(self._driver_lock_path)
         self._safe_member_id = self._make_filesystem_safe(member_id)
+        self._options = utils.collapse(options)
+        self._timeout = int(self._options.get('timeout', 10))
 
     @staticmethod
     def _normalize_path(path):
@@ -390,7 +406,15 @@ class FileDriver(coordination.CoordinationDriverCachedRunWatchers):
                         continue
                     entry_path = os.path.join(group_dir, entry)
                     try:
-                        member_id = self._read_member_id(entry_path)
+                        m_time = datetime.datetime.fromtimestamp(
+                            os.stat(entry_path).st_mtime)
+                        current_time = datetime.datetime.now()
+                        delta_time = timeutils.delta_seconds(m_time,
+                                                             current_time)
+                        if delta_time >= 0 and delta_time <= self._timeout:
+                            member_id = self._read_member_id(entry_path)
+                        else:
+                            continue
                     except EnvironmentError as e:
                         if e.errno != errno.ENOENT:
                             raise
@@ -482,6 +506,23 @@ class FileDriver(coordination.CoordinationDriverCachedRunWatchers):
         fut = self._executor.submit(_do_get_groups)
         return FileFutureResult(fut)
 
+    def heartbeat(self):
+        for group_id in self._joined_groups:
+            safe_group_id = self._make_filesystem_safe(group_id)
+            group_dir = os.path.join(self._group_dir, safe_group_id)
+            member_path = os.path.join(group_dir, "%s.raw" %
+                                       self._safe_member_id)
+
+            @_lock_me(self._driver_lock)
+            def _do_heartbeat():
+                try:
+                    os.utime(member_path, None)
+                except EnvironmentError as err:
+                    if err.errno != errno.ENOENT:
+                        raise
+            _do_heartbeat()
+        return self._timeout
+
     @staticmethod
     def watch_elected_as_leader(group_id, callback):
         raise tooz.NotImplemented
@@ -491,23 +532,5 @@ class FileDriver(coordination.CoordinationDriverCachedRunWatchers):
         raise tooz.NotImplemented
 
 
-class FileFutureResult(coordination.CoordAsyncResult):
-    """File asynchronous result that references a future."""
-
-    def __init__(self, fut):
-        self._fut = fut
-
-    def get(self, timeout=None):
-        try:
-            # Late translate the common failures since the file driver
-            # may throw things that we can not catch in the callbacks where
-            # it is used.
-            with _translate_failures():
-                return self._fut.result(timeout=timeout)
-        except futures.TimeoutError as e:
-            utils.raise_with_cause(coordination.OperationTimedOut,
-                                   encodeutils.exception_to_unicode(e),
-                                   cause=e)
-
-    def done(self):
-        return self._fut.done()
+FileFutureResult = functools.partial(coordination.CoordinatorResult,
+                                     failure_translator=_translate_failures)

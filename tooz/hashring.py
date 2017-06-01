@@ -19,6 +19,7 @@ import hashlib
 import six
 
 import tooz
+from tooz import utils
 
 
 class UnknownNode(tooz.ToozError):
@@ -59,7 +60,7 @@ class HashRing(object):
         return self.add_nodes((node,), weight)
 
     def add_nodes(self, nodes, weight=1):
-        """Add nodes to the hashring.
+        """Add nodes to the hashring with equal weight
 
         :param nodes: Nodes to add.
         :param weight: How many resource instances this node should manage
@@ -68,7 +69,7 @@ class HashRing(object):
         will each handle 1/6, 1/3 and 1/2 of the resources, respectively.
         """
         for node in nodes:
-            key = str(node).encode('utf-8')
+            key = utils.to_binary(node, 'utf-8')
             key_hash = hashlib.md5(key)
             for r in six.moves.range(self._partition_number * weight):
                 key_hash.update(key)
@@ -90,7 +91,7 @@ class HashRing(object):
         except KeyError:
             raise UnknownNode(node)
 
-        key = str(node).encode('utf-8')
+        key = utils.to_binary(node, 'utf-8')
         key_hash = hashlib.md5(key)
         for r in six.moves.range(self._partition_number * weight):
             key_hash.update(key)
@@ -126,15 +127,12 @@ class HashRing(object):
         replicas = min(replicas, len(candidates))
 
         nodes = set()
-        for replica in six.moves.range(0, replicas):
+        while len(nodes) < replicas:
             node = self._get_node(partition)
-            while node in nodes or node in ignore_nodes:
-                partition += 1
-                if partition >= len(self._partitions):
-                    partition = 0
-                node = self._get_node(partition)
-            nodes.add(node)
-
+            if node not in ignore_nodes:
+                nodes.add(node)
+            partition = (partition + 1
+                         if partition + 1 < len(self._partitions) else 0)
         return nodes
 
     def __getitem__(self, key):

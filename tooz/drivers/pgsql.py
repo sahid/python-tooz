@@ -96,7 +96,9 @@ class PostgresLock(locking.Lock):
     def __init__(self, name, parsed_url, options):
         super(PostgresLock, self).__init__(name)
         self.acquired = False
-        self._conn = PostgresDriver.get_connection(parsed_url, options)
+        self._conn = None
+        self._parsed_url = parsed_url
+        self._options = options
         h = hashlib.md5()
         h.update(name)
         if six.PY2:
@@ -104,7 +106,10 @@ class PostgresLock(locking.Lock):
         else:
             self.key = h.digest()[0:2]
 
-    def acquire(self, blocking=True):
+    def acquire(self, blocking=True, shared=False):
+
+        if shared:
+            raise tooz.NotImplemented
 
         @_retry.retry(stop_max_delay=blocking)
         def _lock():
@@ -115,34 +120,46 @@ class PostgresLock(locking.Lock):
                     raise _retry.TryAgain
                 return False
 
-            with _translating_cursor(self._conn) as cur:
-                if blocking is True:
-                    cur.execute("SELECT pg_advisory_lock(%s, %s);", self.key)
-                    cur.fetchone()
-                    self.acquired = True
-                    return True
-                else:
-                    cur.execute("SELECT pg_try_advisory_lock(%s, %s);",
-                                self.key)
-                    if cur.fetchone()[0] is True:
+            if not self._conn or self._conn.closed:
+                self._conn = PostgresDriver.get_connection(self._parsed_url,
+                                                           self._options)
+            try:
+                with _translating_cursor(self._conn) as cur:
+                    if blocking is True:
+                        cur.execute("SELECT pg_advisory_lock(%s, %s);",
+                                    self.key)
+                        cur.fetchone()
                         self.acquired = True
                         return True
-                    elif blocking is False:
-                        return False
                     else:
-                        raise _retry.TryAgain
+                        cur.execute("SELECT pg_try_advisory_lock(%s, %s);",
+                                    self.key)
+                        if cur.fetchone()[0] is True:
+                            self.acquired = True
+                            return True
+                        elif blocking is False:
+                            self._conn.close()
+                            return False
+                        else:
+                            raise _retry.TryAgain
+            except _retry.TryAgain:
+                pass  # contine to retrieve lock on same conn
+            except Exception:
+                self._conn.close()
+                raise
 
         return _lock()
 
     def release(self):
         if not self.acquired:
             return False
+
         with _translating_cursor(self._conn) as cur:
-            cur.execute("SELECT pg_advisory_unlock(%s, %s);",
-                        self.key)
+            cur.execute("SELECT pg_advisory_unlock(%s, %s);", self.key)
             cur.fetchone()
-            self.acquired = False
-            return True
+        self.acquired = False
+        self._conn.close()
+        return True
 
     def __del__(self):
         if self.acquired:
@@ -178,8 +195,7 @@ class PostgresDriver(coordination.CoordinationDriver):
         self._options = utils.collapse(options)
 
     def _start(self):
-        self._conn = PostgresDriver.get_connection(self._parsed_url,
-                                                   self._options)
+        self._conn = self.get_connection(self._parsed_url, self._options)
 
     def _stop(self):
         self._conn.close()
@@ -216,15 +232,17 @@ class PostgresDriver(coordination.CoordinationDriver):
         host = options.get("host") or parsed_url.hostname
         port = options.get("port") or parsed_url.port
         dbname = options.get("dbname") or parsed_url.path[1:]
-        username = parsed_url.username
-        password = parsed_url.password
+        kwargs = {}
+        if parsed_url.username is not None:
+            kwargs["user"] = parsed_url.username
+        if parsed_url.password is not None:
+            kwargs["password"] = parsed_url.password
 
         try:
             return psycopg2.connect(host=host,
                                     port=port,
-                                    user=username,
-                                    password=password,
-                                    database=dbname)
+                                    database=dbname,
+                                    **kwargs)
         except psycopg2.Error as e:
             utils.raise_with_cause(coordination.ToozConnectionError,
                                    _format_exception(e),
