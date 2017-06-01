@@ -13,7 +13,7 @@ override_dh_auto_test:
 ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
 	chmod +x $(CURDIR)/debian/check-memcached-off $(CURDIR)/debian/check-memcached-runs
 	$(CURDIR)/debian/check-memcached-runs
-	pkgos-dh_auto_test
+	TOOZ_TEST_URL="ipc://" pkgos-dh_auto_test
 	$(CURDIR)/debian/check-memcached-off
 endif
 
