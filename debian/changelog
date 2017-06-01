@@ -1,8 +1,9 @@
-python-tooz (1.48.0-0ubuntu2) UNRELEASED; urgency=medium
+python-tooz (1.57.0-0ubuntu1) UNRELEASED; urgency=medium
 
   * d/watch: Use pypi.debian.net.
+  * New upstream release.
 
- -- James Page <james.page@ubuntu.com>  Thu, 01 Jun 2017 11:48:25 +0100
+ -- James Page <james.page@ubuntu.com>  Thu, 01 Jun 2017 11:48:49 +0100
 
 python-tooz (1.48.0-0ubuntu1) zesty; urgency=medium
 
