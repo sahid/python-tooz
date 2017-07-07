@@ -123,32 +123,32 @@ class PostgresLock(locking.Lock):
             if not self._conn or self._conn.closed:
                 self._conn = PostgresDriver.get_connection(self._parsed_url,
                                                            self._options)
-            try:
-                with _translating_cursor(self._conn) as cur:
-                    if blocking is True:
-                        cur.execute("SELECT pg_advisory_lock(%s, %s);",
-                                    self.key)
-                        cur.fetchone()
+
+            with _translating_cursor(self._conn) as cur:
+                if blocking is True:
+                    cur.execute("SELECT pg_advisory_lock(%s, %s);",
+                                self.key)
+                    cur.fetchone()
+                    self.acquired = True
+                    return True
+                else:
+                    cur.execute("SELECT pg_try_advisory_lock(%s, %s);",
+                                self.key)
+                    if cur.fetchone()[0] is True:
                         self.acquired = True
                         return True
+                    elif blocking is False:
+                        self._conn.close()
+                        return False
                     else:
-                        cur.execute("SELECT pg_try_advisory_lock(%s, %s);",
-                                    self.key)
-                        if cur.fetchone()[0] is True:
-                            self.acquired = True
-                            return True
-                        elif blocking is False:
-                            self._conn.close()
-                            return False
-                        else:
-                            raise _retry.TryAgain
-            except _retry.TryAgain:
-                pass  # contine to retrieve lock on same conn
-            except Exception:
-                self._conn.close()
-                raise
+                        raise _retry.TryAgain
 
-        return _lock()
+        try:
+            return _lock()
+        except Exception:
+            if self._conn:
+                self._conn.close()
+            raise
 
     def release(self):
         if not self.acquired:
@@ -190,7 +190,7 @@ class PostgresDriver(coordination.CoordinationDriver):
 
     def __init__(self, member_id, parsed_url, options):
         """Initialize the PostgreSQL driver."""
-        super(PostgresDriver, self).__init__(member_id)
+        super(PostgresDriver, self).__init__(member_id, parsed_url, options)
         self._parsed_url = parsed_url
         self._options = utils.collapse(options)
 

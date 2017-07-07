@@ -133,8 +133,8 @@ class MemberJoinedGroup(Event):
 
     def __repr__(self):
         return "<%s: group %s: +member %s>" % (self.__class__.__name__,
-                                               self.member_id,
-                                               self.group_id)
+                                               self.group_id,
+                                               self.member_id)
 
 
 class MemberLeftGroup(Event):
@@ -146,8 +146,8 @@ class MemberLeftGroup(Event):
 
     def __repr__(self):
         return "<%s: group %s: -member %s>" % (self.__class__.__name__,
-                                               self.member_id,
-                                               self.group_id)
+                                               self.group_id,
+                                               self.member_id)
 
 
 class LeaderElected(Event):
@@ -241,7 +241,7 @@ class CoordinationDriver(object):
     enum member(s) that can be used to interogate how this driver works.
     """
 
-    def __init__(self, member_id):
+    def __init__(self, member_id, parsed_url, options):
         super(CoordinationDriver, self).__init__()
         self._member_id = member_id
         self._started = False
@@ -277,8 +277,7 @@ class CoordinationDriver(object):
         :return: A :py:class:`~tooz.partitioner.Partitioner` object.
 
         """
-        self.join_group_create(
-            group_id, capabilities=utils.dumps({'weight': weight}))
+        self.join_group_create(group_id, capabilities={'weight': weight})
         return partitioner.Partitioner(self, group_id, partitions=partitions)
 
     def leave_partitioned_group(self, partitioner):
@@ -467,7 +466,7 @@ class CoordinationDriver(object):
         """Request the creation of a group asynchronously.
 
         :param group_id: the id of the group to create
-        :type group_id: str
+        :type group_id: ascii bytes
         :returns: None
         :rtype: CoordAsyncResult
         """
@@ -487,9 +486,9 @@ class CoordinationDriver(object):
         """Join a group and establish group membership asynchronously.
 
         :param group_id: the id of the group to join
-        :type group_id: str
+        :type group_id: ascii bytes
         :param capabilities: the capabilities of the joined member
-        :type capabilities: object (typically str)
+        :type capabilities: object
         :returns: None
         :rtype: CoordAsyncResult
         """
@@ -527,7 +526,7 @@ class CoordinationDriver(object):
         """Leave a group asynchronously.
 
         :param group_id: the id of the group to leave
-        :type group_id: str
+        :type group_id: ascii bytes
         :returns: None
         :rtype: CoordAsyncResult
         """
@@ -538,7 +537,7 @@ class CoordinationDriver(object):
         """Delete a group asynchronously.
 
         :param group_id: the id of the group to leave
-        :type group_id: str
+        :type group_id: ascii bytes
         :returns: Result
         :rtype: CoordAsyncResult
         """
@@ -558,9 +557,9 @@ class CoordinationDriver(object):
         """Return the capabilities of a member asynchronously.
 
         :param group_id: the id of the group of the member
-        :type group_id: str
+        :type group_id: ascii bytes
         :param member_id: the id of the member
-        :type member_id: str
+        :type member_id: ascii bytes
         :returns: capabilities of a member
         :rtype: CoordAsyncResult
         """
@@ -571,9 +570,9 @@ class CoordinationDriver(object):
         """Return the statistics and capabilities of a member asynchronously.
 
         :param group_id: the id of the group of the member
-        :type group_id: str
+        :type group_id: ascii bytes
         :param member_id: the id of the member
-        :type member_id: str
+        :type member_id: ascii bytes
         :returns: capabilities and statistics of a member
         :rtype: CoordAsyncResult
         """
@@ -584,9 +583,9 @@ class CoordinationDriver(object):
         """Update member capabilities in the specified group.
 
         :param group_id: the id of the group of the current member
-        :type group_id: str
+        :type group_id: ascii bytes
         :param capabilities: the capabilities of the updated member
-        :type capabilities: object (typically str)
+        :type capabilities: object
         :returns: None
         :rtype: CoordAsyncResult
         """
@@ -672,6 +671,26 @@ class CoordinatorResult(CoordAsyncResult):
         return self._fut.done()
 
 
+class CoordinationDriverWithExecutor(CoordinationDriver):
+
+    EXCLUDE_OPTIONS = None
+
+    def __init__(self, member_id, parsed_url, options):
+        self._options = utils.collapse(options, exclude=self.EXCLUDE_OPTIONS)
+        self._executor = utils.ProxyExecutor.build(
+            self.__class__.__name__, self._options)
+        super(CoordinationDriverWithExecutor, self).__init__(
+            member_id, parsed_url, options)
+
+    def start(self, start_heart=False):
+        self._executor.start()
+        super(CoordinationDriverWithExecutor, self).start(start_heart)
+
+    def stop(self):
+        super(CoordinationDriverWithExecutor, self).stop()
+        self._executor.stop()
+
+
 class CoordinationDriverCachedRunWatchers(CoordinationDriver):
     """Coordination driver with a `run_watchers` implementation.
 
@@ -681,8 +700,9 @@ class CoordinationDriverCachedRunWatchers(CoordinationDriver):
 
     """
 
-    def __init__(self, member_id):
-        super(CoordinationDriverCachedRunWatchers, self).__init__(member_id)
+    def __init__(self, member_id, parsed_url, options):
+        super(CoordinationDriverCachedRunWatchers, self).__init__(
+            member_id, parsed_url, options)
         # A cache for group members
         self._group_members = collections.defaultdict(set)
         self._joined_groups = set()
@@ -752,7 +772,7 @@ def get_coordinator(backend_url, member_id,
     :param backend_url: the backend URL to use
     :type backend: str
     :param member_id: the id of the member
-    :type member_id: str
+    :type member_id: ascii bytes
     :param characteristics: set
     :type characteristics: set of :py:class:`.Characteristics` that will
                            be matched to the requested driver (this **will**
