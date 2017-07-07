@@ -1,3 +1,9 @@
+python-tooz (1.57.3-0ubuntu1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Corey Bryant <corey.bryant@canonical.com>  Fri, 07 Jul 2017 15:53:56 -0400
+
 python-tooz (1.57.0-0ubuntu1) artful; urgency=medium
 
   * d/watch: Use pypi.debian.net.
