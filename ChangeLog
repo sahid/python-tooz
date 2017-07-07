@@ -1,6 +1,30 @@
 CHANGES
 =======
 
+1.57.3
+------
+
+* etcd3: skip ProcessPool based test
+* pgsql: fix self.\_conn.close() being called without connection
+* test: leverage existing helper method in test\_partitioner
+* coordination: remove double serialization of capabilities
+* tests: fix missing .get() on some group operations
+* Mutualize executor code in a mixin class
+* coordination: fix reversed fiels for \_\_repr\_\_ for events
+* Fix docstring for group and member id
+
+1.57.2
+------
+
+* {my,pg}sql: close connections when out of retry
+* Disable test\_get\_lock\_serial\_locking\_two\_lock\_process for etcd3
+* Factorize tox envlist for better readability
+
+1.57.1
+------
+
+* consul: remove unused executor
+
 1.57.0
 ------
 
