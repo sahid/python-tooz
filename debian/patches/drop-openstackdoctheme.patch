@@ -1,0 +1,26 @@
+Description: Temporarily drop openstackdocstheme sphinx extension
+  until sphinx>=1.6.2 is available.
+Author: Corey Bryant <corey.bryant@canonical.com>
+Forwarded: no
+Last-Update: 2017-08-15
+
+--- a/doc/source/conf.py
++++ b/doc/source/conf.py
+@@ -30,7 +30,7 @@
+     'sphinx.ext.todo',
+     'sphinx.ext.graphviz',
+     'sphinx.ext.extlinks',
+-    'openstackdocstheme',
++    #'openstackdocstheme',
+     'sphinx.ext.inheritance_diagram',
+     'sphinx.ext.viewcode',
+     'stevedore.sphinxext',
+@@ -107,7 +107,7 @@
+ 
+ # The theme to use for HTML and HTML Help pages.  See the documentation for
+ # a list of builtin themes.
+-html_theme = 'openstackdocs'
++# html_theme = 'openstackdocs'
+ 
+ # Theme options are theme-specific and customize the look and feel of a theme
+ # further.  For a list of options available for each theme, see the
