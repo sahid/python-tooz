@@ -1,8 +1,8 @@
 Metadata-Version: 1.1
 Name: tooz
-Version: 1.57.3
+Version: 1.58.0
 Summary: Coordination library for distributed systems.
-Home-page: http://docs.openstack.org/developer/tooz
+Home-page: https://docs.openstack.org/tooz/latest/
 Author: OpenStack
 Author-email: openstack-dev@lists.openstack.org
 License: Apache-2
@@ -22,8 +22,8 @@ Description: Tooz
         a coordination API helping developers to build distributed applications.
         
         * Free software: Apache license
-        * Documentation: https://docs.openstack.org/developer/tooz
-        * Source: http://git.openstack.org/cgit/openstack/tooz
+        * Documentation: https://docs.openstack.org/tooz/latest/
+        * Source: https://git.openstack.org/cgit/openstack/tooz
         * Bugs: https://bugs.launchpad.net/python-tooz/
         
         Join us
