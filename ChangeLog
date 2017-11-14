@@ -1,6 +1,15 @@
 CHANGES
 =======
 
+1.59.0
+------
+
+* Acquire fails with "ToozError: Not found"
+* redis: always remove lock from acquired lock when release()ing
+* redis: log an error on release failure
+* Use the same default timeout for async result
+* Update reno for stable/pike
+
 1.58.0
 ------
 
@@ -13,6 +22,7 @@ CHANGES
 
 * Switch from oslosphinx to openstackdocstheme
 * Turn on warning-is-error in doc build
+* Add etcd3 group support
 
 1.57.3
 ------
