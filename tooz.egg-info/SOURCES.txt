@@ -38,12 +38,14 @@ examples/leader_election.py
 examples/lock.py
 examples/partitioner.py
 releasenotes/notes/add-reno-996dd44974d53238.yaml
+releasenotes/notes/etcd3-group-support-b039cf19f4a268a3.yaml
 releasenotes/notes/hashring-0470f9119ef63d49.yaml
 releasenotes/notes/join_group_create-5095ec02e20c7242.yaml
 releasenotes/notes/partitioner-4005767d287dc7c9.yaml
 releasenotes/source/conf.py
 releasenotes/source/index.rst
 releasenotes/source/ocata.rst
+releasenotes/source/pike.rst
 releasenotes/source/unreleased.rst
 releasenotes/source/_static/.placeholder
 releasenotes/source/_templates/.placeholder

@@ -1,11 +1,12 @@
 Metadata-Version: 1.1
 Name: tooz
-Version: 1.58.0
+Version: 1.59.0
 Summary: Coordination library for distributed systems.
 Home-page: https://docs.openstack.org/tooz/latest/
 Author: OpenStack
 Author-email: openstack-dev@lists.openstack.org
 License: Apache-2
+Description-Content-Type: UNKNOWN
 Description: Tooz
         ====
         
