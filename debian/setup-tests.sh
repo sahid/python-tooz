@@ -81,6 +81,7 @@ export TOOZ_TEST_MEMCACHED_URL="memcached://localhost:11212?timeout=5"
 # Start redis
 #redis-server --port 6380 & REDIS_SERVER_PID=$!
 #export TOOZ_TEST_REDIS_URL="redis://localhost:6380?timeout=5"
+TOOZ_TEST_URLS=${TOOZ_TEST_MYSQL_URL},${TOOZ_TEST_PGSQL_URL},${TOOZ_TEST_MEMCACHED_URL}
 
 # Yield execution to venv command
 $*
