@@ -1,5 +1,6 @@
 .coveragerc
 .testr.conf
+.zuul.yaml
 AUTHORS
 CONTRIBUTING.rst
 ChangeLog
@@ -14,6 +15,7 @@ setup-etcd-env.sh
 setup.cfg
 setup.py
 tox.ini
+doc/requirements.txt
 doc/source/conf.py
 doc/source/index.rst
 doc/source/install/index.rst
@@ -39,6 +41,7 @@ examples/lock.py
 examples/partitioner.py
 releasenotes/notes/add-reno-996dd44974d53238.yaml
 releasenotes/notes/etcd3-group-support-b039cf19f4a268a3.yaml
+releasenotes/notes/etcd3gw-group-support-598832a8764a8aa6.yaml
 releasenotes/notes/hashring-0470f9119ef63d49.yaml
 releasenotes/notes/join_group_create-5095ec02e20c7242.yaml
 releasenotes/notes/partitioner-4005767d287dc7c9.yaml
@@ -46,12 +49,12 @@ releasenotes/source/conf.py
 releasenotes/source/index.rst
 releasenotes/source/ocata.rst
 releasenotes/source/pike.rst
+releasenotes/source/queens.rst
 releasenotes/source/unreleased.rst
 releasenotes/source/_static/.placeholder
 releasenotes/source/_templates/.placeholder
 tools/compat-matrix.py
 tools/pretty_tox.sh
-tools/tox_install.sh
 tooz/__init__.py
 tooz/_retry.py
 tooz/coordination.py
