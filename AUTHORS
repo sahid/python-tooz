@@ -1,17 +1,22 @@
 Abhijeet Malawade <Abhijeet.Malawade@nttdata.com>
 Adam Gandelman <adamg@ubuntu.com>
 Akihiro Motoki <amotoki@gmail.com>
+Andreas Jaeger <aj@suse.com>
 Cao Xuan Hoang <hoangcx@vn.fujitsu.com>
 ChangBo Guo(gcb) <eric.guo@easystack.cn>
 Chris Dent <chdent@redhat.com>
 Davanum Srinivas <davanum@gmail.com>
 Davanum Srinivas <dims@linux.vnet.ibm.com>
 Dina Belova <dbelova@mirantis.com>
+Dirk Mueller <dirk@dmllr.de>
 Doug Hellmann <doug@doughellmann.com>
+Duong Ha-Quang <duonghq@vn.fujitsu.com>
 Eoghan Glynn <eglynn@redhat.com>
 Gary Kotton <gkotton@vmware.com>
 Gorka Eguileor <geguileo@redhat.com>
+Hoang Trung Hieu <hieuht@vn.fujitsu.com>
 Imran Ansari <imran.ansari@hpe.com>
+James E. Blair <jeblair@redhat.com>
 Jay Clark <jason.t.clark@hp.com>
 Jay Pipes <jaypipes@gmail.com>
 Jeremy Stanley <fungi@yuggoth.org>
@@ -33,12 +38,15 @@ Monty Taylor <mordred@inaugust.com>
 OpenStack Release Bot <infra-root@openstack.org>
 Robert Collins <rbtcollins@hp.com>
 Ronald Bradford <ronald.bradford@gmail.com>
+Sean McGinnis <sean.mcginnis@huawei.com>
 Sergey Lukjanov <slukjanov@mirantis.com>
+Thomas Herve <therve@redhat.com>
 Tony Breeds <tony@bakeyournoodle.com>
 Victor Morales <victor.morales@intel.com>
 Vilobh Meshram <vilobhmm@yahoo-inc.com>
 Yassine Lamgarchal <yassine.lamgarchal@enovance.com>
 Yassine Lamgarchal <yassine.lamgarchal@redhat.com>
+Zuul <zuul@review.openstack.org>
 fuzk <fuzk@inspur.com>
 gord chung <gord@live.ca>
 gordon chung <gord@live.ca>

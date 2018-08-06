@@ -1,6 +1,29 @@
 CHANGES
 =======
 
+1.62.0
+------
+
+* Trivial: Update pypi url to new url
+* set default python to python3
+* Implement group support for etcd3gw
+
+1.61.0
+------
+
+* Zuul: Remove project name
+* Zuul: Remove project name
+* Update reno for stable/queens
+* partitioner: do not use hash() to determine object identity
+* msgpack-python has been renamed to msgpack
+* Follow the new PTI for document build
+* Remove tox\_install.sh
+* Use native Zuul v3 tox jobs
+* Add doc/requirements.txt
+* Remove setting of version/release from releasenotes
+* Zuul: add file extension to playbook path
+* Move legacy jobs to project
+
 1.59.0
 ------
 
