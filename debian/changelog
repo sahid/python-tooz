@@ -1,4 +1,4 @@
-python-tooz (1.62.0-0ubuntu1) UNRELEASED; urgency=medium
+python-tooz (1.62.0-0ubuntu1) cosmic; urgency=medium
 
   * New upstream release.
   * d/control: Align (Build-)Depends with upstream.
