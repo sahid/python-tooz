@@ -1,3 +1,9 @@
+python-tooz (1.62.0-0ubuntu1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+
+ -- Corey Bryant <corey.bryant@canonical.com>  Mon, 06 Aug 2018 13:49:37 -0400
+
 python-tooz (1.59.0-0ubuntu2) cosmic; urgency=medium
 
   * Merge from Debian unstable.  Remaining changes:
