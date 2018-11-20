@@ -3,6 +3,7 @@ python-tooz (1.63.1-0ubuntu1) UNRELEASED; urgency=medium
   * New upstream release for OpenStack Stein.
   * d/p/*: Drop, included upstream.
   * d/control: Use python3-sphinx.
+  * d/control: Switch to stestr for unit tests.
 
  -- James Page <james.page@ubuntu.com>  Tue, 20 Nov 2018 10:09:56 +0000
 
