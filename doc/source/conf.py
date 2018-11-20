@@ -63,7 +63,7 @@ copyright = u'%s, OpenStack Foundation' % datetime.date.today().year
 #
 # The short X.Y version.
 version = subprocess.Popen(['sh', '-c', 'cd ../..; python setup.py --version'],
-                           stdout=subprocess.PIPE).stdout.read()
+                           stdout=subprocess.PIPE).stdout.read().decode('utf-8')
 version = version.strip()
 # The full version, including alpha/beta/rc tags.
 release = version
@@ -260,4 +260,8 @@ texinfo_documents = [
 # extlinks = {
 # }
 
-autodoc_default_flags = ['members', 'special-members', 'show-inheritance']
+autodoc_default_options = {
+    'members': None,
+    'special-members': None,
+    'show_inheritance': None,
+    }

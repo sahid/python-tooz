@@ -1,6 +1,6 @@
 Metadata-Version: 2.1
 Name: tooz
-Version: 1.62.0
+Version: 1.63.1
 Summary: Coordination library for distributed systems.
 Home-page: https://docs.openstack.org/tooz/latest/
 Author: OpenStack
@@ -25,6 +25,7 @@ Description: Tooz
         * Documentation: https://docs.openstack.org/tooz/latest/
         * Source: https://git.openstack.org/cgit/openstack/tooz
         * Bugs: https://bugs.launchpad.net/python-tooz/
+        * Release notes: https://docs.openstack.org/releasenotes/tooz
         
         Join us
         -------
@@ -44,16 +45,16 @@ Classifier: Programming Language :: Python :: 2.7
 Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3.5
 Classifier: Topic :: System :: Distributed Computing
-Provides-Extra: etcd
-Provides-Extra: test
-Provides-Extra: consul
-Provides-Extra: etcd3
-Provides-Extra: zookeeper
-Provides-Extra: memcached
 Provides-Extra: ipc
-Provides-Extra: redis
+Provides-Extra: memcached
 Provides-Extra: mysql
-Provides-Extra: postgresql
 Provides-Extra: zake
-Provides-Extra: doc
+Provides-Extra: consul
+Provides-Extra: zookeeper
 Provides-Extra: etcd3gw
+Provides-Extra: etcd3
+Provides-Extra: etcd
+Provides-Extra: redis
+Provides-Extra: postgresql
+Provides-Extra: test
+Provides-Extra: doc

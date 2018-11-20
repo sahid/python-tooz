@@ -1,6 +1,26 @@
 CHANGES
 =======
 
+1.63.1
+------
+
+
+1.63.0
+------
+
+* coordination: do not retry the whole heartbeat on fail
+* Use templates for cover
+* Migrate to stestr
+* Fix coverage tests
+* Switch to autodoc\_default\_options
+* Ensure consistent encoding of strings for ID
+* add lib-forward-testing-python3 test job
+* add python 3.6 unit test job
+* import zuul job settings from project-config
+* Update reno for stable/rocky
+* Add release note link in README
+* fix tox python3 overrides
+
 1.62.0
 ------
 
