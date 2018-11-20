@@ -50,12 +50,12 @@ redis>=2.10.0
 [test]
 mock>=2.0
 python-subunit>=0.0.18
-testrepository>=0.0.18
 testtools>=1.4.0
 coverage>=3.6
 fixtures>=3.0.0
 pifpaf>=0.10.0
 os-testr>=0.8.0
+stestr>=2.0.0
 
 [zake]
 zake>=0.1.6
