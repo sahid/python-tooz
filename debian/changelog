@@ -1,11 +1,11 @@
-python-tooz (1.64.2-0ubuntu1) UNRELEASED; urgency=medium
+python-tooz (1.64.2-0ubuntu1) disco; urgency=medium
 
   * New upstream release for OpenStack Stein.
   * d/control: Align (Build-)Depends with upstream.
   * d/p/drop-grpcio.patch: Drop requirement for grpcio - this was done
     to resolve gate issue upstream and is not required in distro.
 
- -- James Page <james.page@ubuntu.com>  Tue, 12 Mar 2019 09:30:03 +0000
+ -- James Page <james.page@ubuntu.com>  Tue, 12 Mar 2019 09:44:33 +0000
 
 python-tooz (1.63.1-0ubuntu1) disco; urgency=medium
 
