@@ -1,6 +1,22 @@
 CHANGES
 =======
 
+1.64.2
+------
+
+
+1.64.1
+------
+
+* Fixed UnicodeEncodeError for Python2 unicode objects
+
+1.64.0
+------
+
+* More explicitly document driver connection strings
+* Unblock tooz gate
+* Change openstack-dev to openstack-discuss
+
 1.63.1
 ------
 
