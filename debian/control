@@ -9,9 +9,6 @@ Build-Depends:
  debhelper (>= 10),
  dh-python,
  openstack-pkg-tools,
- python-all,
- python-pbr (>= 1.6),
- python-setuptools,
  python3-all,
  python3-pbr (>= 1.6),
  python3-setuptools,
@@ -22,33 +19,6 @@ Build-Depends-Indep:
  net-tools,
  postgresql,
  postgresql-server-dev-all,
- python-concurrent.futures (>= 3.0),
- python-coverage,
- python-enum34,
- python-eventlet,
- python-fasteners (>= 0.7),
- python-fixtures,
- python-futurist (>= 1.2.0),
- python-kazoo,
- python-mock,
- python-msgpack (>= 0.4.0),
- python-oslo.serialization (>= 1.10.0),
- python-oslo.utils (>= 3.15.0),
- python-psycopg2 (>= 2.5),
- python-pymemcache (>= 1.2.9),
- python-pymysql (>= 0.6.2),
- python-redis (>= 2.10.0),
- python-reno (>= 1.8.0),
- python-requests,
- python-six (>= 1.9.0),
- python-stestr,
- python-stevedore (>= 1:1.16.0),
- python-sysv-ipc (>= 0.6.8),
- python-tenacity (>= 3.2.1),
- python-testscenarios,
- python-testtools,
- python-voluptuous (>= 0.8.9),
- python-zake (>= 0.1.6),
  python3-eventlet,
  python3-fasteners (>= 0.7),
  python3-fixtures,
@@ -80,38 +50,6 @@ Vcs-Browser: https://git.launchpad.net/~ubuntu-server-dev/ubuntu/+source/python-
 Vcs-Git: git://git.launchpad.net/~ubuntu-server-dev/ubuntu/+source/python-tooz
 Homepage: https://github.com/openstack/tooz
 Testsuite: autopkgtest-pkg-python
-
-Package: python-tooz
-Architecture: all
-Depends:
- python-concurrent.futures (>= 3.0),
- python-enum34,
- python-fasteners (>= 0.7),
- python-futurist (>= 1.2.0),
- python-kazoo,
- python-msgpack (>= 0.4.0),
- python-oslo.serialization (>= 1.10.0),
- python-oslo.utils (>= 3.15.0),
- python-pbr (>= 1.6),
- python-pymemcache,
- python-pymysql,
- python-redis,
- python-requests,
- python-six (>= 1.9.0),
- python-stevedore (>= 1:1.16.0),
- python-tenacity (>= 3.2.1),
- python-voluptuous (>= 0.8.9),
- python-zake,
- ${misc:Depends},
- ${python:Depends},
-Suggests:
- python-sysv-ipc,
-Description: coordination library for distributed systems - Python 2.x
- The Tooz project centralizes the most common distributed primitives like group
- membership protocol, lock service and leader election by providing a
- coordination API helping developers to build distributed applications.
- .
- This package contains the Python 2.x module.
 
 Package: python-tooz-doc
 Section: doc
