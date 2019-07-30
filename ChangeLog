@@ -1,6 +1,26 @@
 CHANGES
 =======
 
+1.66.0
+------
+
+* Move grpcio from requirements.txt to extras
+* Blacklist sphinx 2.1.0
+
+1.65.0
+------
+
+* Move test deps to test-requirements.txt
+* Remove unused requirements
+* Update Sphinx requirement and uncap grpcio
+* Referencing testenv deps now works
+* Update master for stable/stein
+* Replace git.openstack.org URLs with opendev.org URLs
+* Remove py35, add py37 classifiers
+* Unblock tooz gate
+* OpenDev Migration Patch
+* add python 3.7 unit test job
+
 1.64.2
 ------
 

@@ -14,6 +14,7 @@ setup-consul-env.sh
 setup-etcd-env.sh
 setup.cfg
 setup.py
+test-requirements.txt
 tox.ini
 doc/requirements.txt
 doc/source/conf.py
@@ -39,6 +40,7 @@ examples/hashring.py
 examples/leader_election.py
 examples/lock.py
 examples/partitioner.py
+playbooks/stop-redis.yaml
 releasenotes/notes/add-reno-996dd44974d53238.yaml
 releasenotes/notes/etcd3-group-support-b039cf19f4a268a3.yaml
 releasenotes/notes/etcd3gw-group-support-598832a8764a8aa6.yaml
@@ -51,6 +53,7 @@ releasenotes/source/ocata.rst
 releasenotes/source/pike.rst
 releasenotes/source/queens.rst
 releasenotes/source/rocky.rst
+releasenotes/source/stein.rst
 releasenotes/source/unreleased.rst
 releasenotes/source/_static/.placeholder
 releasenotes/source/_templates/.placeholder
