@@ -2,6 +2,7 @@ python-tooz (1.66.0-0ubuntu1) UNRELEASED; urgency=medium
 
   * New upstream release for OpenStack Train.
   * d/control: Align (Build-)Depends with upstream.
+  * d/p/drop-grpcio.patch: Dropped. grpcio has been moved to setup.cfg [extras].
 
  -- Corey Bryant <corey.bryant@canonical.com>  Tue, 30 Jul 2019 15:52:27 -0400
 
