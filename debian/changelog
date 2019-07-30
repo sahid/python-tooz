@@ -1,3 +1,9 @@
+python-tooz (1.66.0-0ubuntu1) UNRELEASED; urgency=medium
+
+  * New upstream release for OpenStack Train.
+
+ -- Corey Bryant <corey.bryant@canonical.com>  Tue, 30 Jul 2019 15:52:27 -0400
+
 python-tooz (1.64.2-0ubuntu2) eoan; urgency=medium
 
   * d/control, d/rules: Drop Python 2 support.
