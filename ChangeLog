@@ -1,9 +1,19 @@
 CHANGES
 =======
 
+1.66.2
+------
+
+
+1.66.1
+------
+
+* Fix wrong log level during heartbeat
+
 1.66.0
 ------
 
+* Add Python 3 Train unit tests
 * Move grpcio from requirements.txt to extras
 * Blacklist sphinx 2.1.0
 
