@@ -1,12 +1,13 @@
-python-tooz (1.66.2-2ubuntu1) UNRELEASED; urgency=low
+python-tooz (1.67.0-0ubuntu1) UNRELEASED; urgency=low
 
   * Merge from Debian unstable.  Remaining changes:
     - d/gbp.conf: Retain for pristine-tar.
     - d/watch: Get tarball from openstack.org.
     - d/control: Enable autopkgtest-pkg-python testsuite.
     - d/compat: Drop. Dropped since  debhelper-compat (= 10).
+  * New upstream release for OpenStack Ussuri.
 
- -- Sahid Orentino Ferdjaoui <sahid.ferdjaoui@canonical.com>  Tue, 10 Dec 2019 15:44:22 +0100
+ -- Sahid Orentino Ferdjaoui <sahid.ferdjaoui@canonical.com>  Tue, 10 Dec 2019 15:45:58 +0100
 
 python-tooz (1.66.2-2) unstable; urgency=medium
 
