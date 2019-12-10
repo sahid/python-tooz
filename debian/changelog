@@ -1,3 +1,34 @@
+python-tooz (1.66.2-2ubuntu1) UNRELEASED; urgency=low
+
+  * Merge from Debian unstable.  Remaining changes:
+    - d/gbp.conf: Retain for pristine-tar.
+    - d/watch: Get tarball from openstack.org.
+    - d/control: Enable autopkgtest-pkg-python testsuite.
+    - d/compat: Drop. Dropped since  debhelper-compat (= 10).
+
+ -- Sahid Orentino Ferdjaoui <sahid.ferdjaoui@canonical.com>  Tue, 10 Dec 2019 15:44:22 +0100
+
+python-tooz (1.66.2-2) unstable; urgency=medium
+
+  [ Ondřej Nový ]
+  * Bump Standards-Version to 4.4.1.
+
+  [ Thomas Goirand ]
+  * Uploading to unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Mon, 21 Oct 2019 10:32:29 +0200
+
+python-tooz (1.66.2-1) experimental; urgency=medium
+
+  [ Ondřej Nový ]
+  * Use debhelper-compat instead of debian/compat.
+  * Bump Standards-Version to 4.4.0.
+
+  [ Thomas Goirand ]
+  * New upstream release.
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 18 Sep 2019 22:37:52 +0200
+
 python-tooz (1.66.2-0ubuntu1) eoan; urgency=medium
 
   * New upstream release for OpenStack Train.
@@ -11,6 +42,32 @@ python-tooz (1.66.0-0ubuntu1) eoan; urgency=medium
   * d/p/drop-grpcio.patch: Dropped. grpcio has been moved to setup.cfg [extras].
 
  -- Corey Bryant <corey.bryant@canonical.com>  Tue, 30 Jul 2019 15:52:27 -0400
+
+python-tooz (1.64.2-2) unstable; urgency=medium
+
+  * Uploading to unstable.
+
+ -- Thomas Goirand <zigo@debian.org>  Tue, 16 Jul 2019 14:41:45 +0200
+
+python-tooz (1.64.2-1) experimental; urgency=medium
+
+  [ Michal Arbet ]
+  * Apply patch from Ubuntu (Closes: #898740):
+    - d/control: Enable autopkgtest-pkg-python dep8 tests.
+    - d/control: Add python{3}-sysv-ipc to Suggests for IPC driver.
+
+  [ Ondřej Nový ]
+  * d/changelog: Remove trailing whitespaces.
+
+  [ Thomas Goirand ]
+  * New upstream release.
+  * Removed Python 2 support.
+  * Removed all patches, applied upstream.
+  * Run unit tests with installed Python module.
+  * Blacklist failing test:
+    - tooz.tests.test_coordination.TestAPI.test_get_lock_multiple_coords
+
+ -- Thomas Goirand <zigo@debian.org>  Wed, 27 Mar 2019 14:48:14 +0100
 
 python-tooz (1.64.2-0ubuntu2) eoan; urgency=medium
 
@@ -35,6 +92,40 @@ python-tooz (1.63.1-0ubuntu1) disco; urgency=medium
   * d/control: Switch to stestr for unit tests.
 
  -- James Page <james.page@ubuntu.com>  Tue, 20 Nov 2018 10:38:32 +0000
+
+python-tooz (1.62.0-3) unstable; urgency=medium
+
+  [ Michal Arbet ]
+  * Add patch ensure-consistent-encoding.patch
+
+  [ Ondřej Nový ]
+  * Running wrap-and-sort -bast
+
+ -- Thomas Goirand <zigo@debian.org>  Fri, 07 Sep 2018 13:39:27 +0200
+
+python-tooz (1.62.0-2) unstable; urgency=medium
+
+  * Uploading to unstable.
+
+ -- Michal Arbet <michal.arbet@ultimum.io>  Tue, 04 Sep 2018 23:24:16 +0200
+
+python-tooz (1.62.0-1) experimental; urgency=medium
+
+  [ Ondřej Nový ]
+  * d/control: Set Vcs-* to salsa.debian.org
+  * Running wrap-and-sort -bast
+  * d/control: Use team+openstack@tracker.debian.org as maintainer
+
+  [ Michal Arbet ]
+  * Fix embedded-javascript-library
+  * d/rules: Fix tests
+  * d/rules: Switch doc generation to python3
+  * d/patches: Add fix-doc-generation.patch
+  * d/control: Remove trailing tilde - debhelper
+  * d/control: Add me to uploaders field
+  * d/copyright: Update file
+
+ -- Michal Arbet <michal.arbet@ultimum.io>  Thu, 23 Aug 2018 11:21:46 +0200
 
 python-tooz (1.62.0-0ubuntu2) cosmic; urgency=medium
 
@@ -102,7 +193,6 @@ python-tooz (1.58.0-1) experimental; urgency=medium
   * Temporarily not run unit tests until feedback from upstream.
 
  -- Thomas Goirand <zigo@debian.org>  Mon, 09 Oct 2017 00:11:13 +0200
-
 
 python-tooz (1.58.0-0ubuntu1) artful; urgency=medium
 
@@ -309,3 +399,4 @@ python-tooz (0.3-1) unstable; urgency=medium
   * Initial release. (Closes: #758138)
 
  -- Thomas Goirand <zigo@debian.org>  Thu, 14 Aug 2014 21:57:41 +0800
+

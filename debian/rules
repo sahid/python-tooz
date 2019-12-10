@@ -6,37 +6,28 @@ include /usr/share/openstack-pkg-tools/pkgos.make
 %:
 	dh $@ --buildsystem=python_distutils --with python3,sphinxdoc
 
+override_dh_auto_clean:
+	rm -rf build TEST_PID_MEMCACHE.pid .stestr
+
 override_dh_auto_build:
-	python3 setup.py build --force
+	echo "Do nothing..."
 
 override_dh_auto_install:
-	pkgos-dh_auto_install --no-py2
-
-override_dh_auto_test:
+	for i in $(PYTHON3S) ; do \
+		python3 setup.py install -f --install-layout=deb --root=$(CURDIR)/debian/tmp ; \
+	done
 ifeq (,$(findstring nocheck, $(DEB_BUILD_OPTIONS)))
 	chmod +x $(CURDIR)/debian/check-memcached-off $(CURDIR)/debian/check-memcached-runs
 	$(CURDIR)/debian/check-memcached-runs
-	TOOZ_TEST_URL="ipc://" pkgos-dh_auto_test --no-py2
+	PYTHONPATH=$(CURDIR)/debian/tmp/usr/lib/python3/dist-packages TOOZ_TEST_URL="ipc://" pkgos-dh_auto_test --no-py2 'tooz\.tests\.(?!(.*test_coordination\.TestAPI\.test_get_lock_multiple_coords.*))'
 	$(CURDIR)/debian/check-memcached-off
 endif
 
-override_dh_clean:
-	dh_clean -O--buildsystem=python_distutils
-	rm -rf build TEST_PID_MEMCACHE.pid .testrepository
-
-override_dh_auto_clean:
-	python3 setup.py clean -a
+override_dh_auto_test:
+	echo "Do nothing..."
 
 override_dh_sphinxdoc:
-	sphinx-build -b html doc/source debian/python-tooz-doc/usr/share/doc/python-tooz-doc/html
-	dh_sphinxdoc -O--buildsystem=python_distutils
-
-# Commands not to run
-override_dh_installcatalogs:
-override_dh_installemacsen override_dh_installifupdown:
-override_dh_installinfo override_dh_installmenu override_dh_installmime:
-override_dh_installmodules override_dh_installlogcheck:
-override_dh_installpam override_dh_installppp override_dh_installudev override_dh_installwm:
-override_dh_installxfonts override_dh_gconf override_dh_icons override_dh_perl override_dh_usrlocal:
-override_dh_installcron override_dh_installdebconf:
-override_dh_installlogrotate override_dh_installgsettings:
+ifeq (,$(findstring nodoc, $(DEB_BUILD_OPTIONS)))
+	python3 -m sphinx -b html doc/source $(CURDIR)/debian/python-tooz-doc/usr/share/doc/python-tooz-doc/html
+	dh_sphinxdoc
+endif

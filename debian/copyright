@@ -1,13 +1,21 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: tooz
-Source:
+Source: https://docs.openstack.org/tooz
 
 Files: *
 Copyright: (c) 2013-2016, Tooz developers
+           (c) 2013, Hewlett-Packard Development Company, L.P.
+           (c) 2014-2015, Yahoo! Inc.
+           (c) 2013-2015, eNovance Inc.
+           (c) 2016, Red Hat, Inc.
+           (c) 2013-2014, Mirantis Inc.
+           (c) 2015, OpenStack Foundation
+           (c) 2016, Cloudbase Solutions Srl
 License: Apache-2
 
 Files: debian/*
 Copyright: (c) 2014-2016, Thomas Goirand <zigo@debian.org>
+           (c) 2018, Michal Arbet <michal.arbet@ultimum.io>
 License: Apache-2
 
 License: Apache-2

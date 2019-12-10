@@ -6,7 +6,7 @@ XSBC-Original-Maintainer: Debian OpenStack <openstack-devel@lists.alioth.debian.
 Uploaders:
  Thomas Goirand <zigo@debian.org>,
 Build-Depends:
- debhelper (>= 10),
+ debhelper-compat (= 10),
  dh-python,
  openstack-pkg-tools,
  python3-all,
@@ -48,7 +48,7 @@ Build-Depends-Indep:
  python3-voluptuous (>= 0.8.9),
  python3-zake (>= 0.1.6),
  subunit,
-Standards-Version: 4.1.0
+Standards-Version: 4.4.1
 Vcs-Browser: https://git.launchpad.net/~ubuntu-server-dev/ubuntu/+source/python-tooz
 Vcs-Git: git://git.launchpad.net/~ubuntu-server-dev/ubuntu/+source/python-tooz
 Homepage: https://github.com/openstack/tooz
