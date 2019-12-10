@@ -54,11 +54,11 @@ releasenotes/source/pike.rst
 releasenotes/source/queens.rst
 releasenotes/source/rocky.rst
 releasenotes/source/stein.rst
+releasenotes/source/train.rst
 releasenotes/source/unreleased.rst
 releasenotes/source/_static/.placeholder
 releasenotes/source/_templates/.placeholder
 tools/compat-matrix.py
-tools/pretty_tox.sh
 tooz/__init__.py
 tooz/_retry.py
 tooz/coordination.py

@@ -1,6 +1,13 @@
 CHANGES
 =======
 
+1.67.0
+------
+
+* Drop os-testr test-requirement and pretty\_tox.sh
+* Update master for stable/train
+* Add shared arg in metaclass Lock
+
 1.66.2
 ------
 
